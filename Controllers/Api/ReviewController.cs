@@ -31,6 +31,11 @@ namespace AssetTaking.Controllers.Api
                         KategoriBarang = g.First().KategoriBarang,
                         Status = g.First().Status,
                         StatusText = g.First().Status == 1 ? "Asset In" : g.First().Status == 2 ? "Asset Out" : "Unknown",
+                        // Calculate Qty: Asset In (status 1) - Asset Out (status 2), minimum 0
+                        Qty = Math.Max(0, 
+                            g.Where(x => x.Status == 1).Sum(x => x.Qty ?? 0) - 
+                            g.Where(x => x.Status == 2).Sum(x => x.Qty ?? 0)
+                        ),
                         CreatedAt = g.First().CreatedAt,
                         CreatedBy = g.First().CreatedBy
                     })

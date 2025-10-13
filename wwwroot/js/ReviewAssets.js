@@ -14,6 +14,7 @@ $(document).ready(function () {
             { data: "nomorAsset" },
             { data: "namaBarang" },
             { data: "kategoriBarang" },
+            { data: "qty" },
             {
                 data: "createdAt",
                 render: function (data) {

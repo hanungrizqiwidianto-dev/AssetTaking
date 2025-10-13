@@ -187,6 +187,49 @@
     let html5QrcodeScanner = null;
     let isScanning = false;
 
+    // Image preview functionality for scan form
+    $('#scan_fotoFile').on('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                Swal.fire({
+                    title: 'Format File Tidak Valid!',
+                    text: 'Silakan pilih file gambar dengan format JPG, JPEG, PNG, atau GIF.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                $(this).val('');
+                $('#scan_imagePreview').hide();
+                return;
+            }
+
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({
+                    title: 'Ukuran File Terlalu Besar!',
+                    text: 'Ukuran file maksimal 5MB.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                $(this).val('');
+                $('#scan_imagePreview').hide();
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#scan_previewImg').attr('src', e.target.result);
+                $('#scan_imagePreview').show();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#scan_imagePreview').hide();
+        }
+    });
+
     // Initialize scanner controls
     initializeScannerControls();
 
@@ -449,6 +492,7 @@
         $('#submitScannedBtn').prop('disabled', true);
         $('#scan-result').hide();
         $('#validationStatus').hide(); // Hide validation status
+        $('#scan_imagePreview').hide(); // Hide image preview
         
         // Stop scanning if active
         if (isScanning) {
@@ -472,17 +516,26 @@
             return; // Stop submit process
         }
         
-        const formData = {
-            NamaBarang: $('#scan_namaBarang').val(),
-            NomorAsset: nomorAsset,
-            KodeBarang: kodeBarang,
-            KategoriBarang: $('#scan_kategoriBarang').val(),
-            Qty: parseInt($('#scan_qty').val()),
-            Foto: $('#scan_foto').val()
-        };
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('NamaBarang', $('#scan_namaBarang').val());
+        formData.append('NomorAsset', nomorAsset);
+        formData.append('KodeBarang', kodeBarang);
+        formData.append('KategoriBarang', $('#scan_kategoriBarang').val());
+        formData.append('Qty', parseInt($('#scan_qty').val()));
+        
+        // Add file if selected
+        const fileInput = $('#scan_fotoFile')[0];
+        if (fileInput.files.length > 0) {
+            formData.append('fotoFile', fileInput.files[0]);
+        }
 
         // Validate required fields
-        if (!formData.NamaBarang || !formData.KategoriBarang || !formData.Qty) {
+        const namaBarang = $('#scan_namaBarang').val();
+        const kategoriBarang = $('#scan_kategoriBarang').val();
+        const qty = $('#scan_qty').val();
+        
+        if (!namaBarang || !kategoriBarang || !qty) {
             Swal.fire({
                 title: 'Validasi Error!',
                 text: 'Nama Barang, Kategori, dan Quantity harus diisi.',
@@ -494,10 +547,7 @@
         try {
             const response = await fetch('/api/AssetIn/CreateFromScan', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(formData)
+                body: formData
             });
 
             const result = await response.json();

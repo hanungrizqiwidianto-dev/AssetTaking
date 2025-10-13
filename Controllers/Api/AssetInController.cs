@@ -154,7 +154,7 @@ namespace AssetTaking.Controllers.Api
         }
 
         [HttpPost("CreateFromScan")]
-        public IActionResult CreateFromScan([FromBody] AssetInRequest request)
+        public async Task<IActionResult> CreateFromScan([FromForm] AssetInRequest request, IFormFile? fotoFile)
         {
             try
             {
@@ -204,6 +204,48 @@ namespace AssetTaking.Controllers.Api
                     });
                 }
 
+                string? fotoPath = null;
+
+                // Handle file upload if provided
+                if (fotoFile != null && fotoFile.Length > 0)
+                {
+                    // Validate file type
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var fileExtension = Path.GetExtension(fotoFile.FileName).ToLowerInvariant();
+                    
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        return Ok(new { success = false, message = "Format file tidak didukung. Gunakan JPG, JPEG, PNG, atau GIF." });
+                    }
+
+                    // Validate file size (5MB max)
+                    if (fotoFile.Length > 5 * 1024 * 1024)
+                    {
+                        return Ok(new { success = false, message = "Ukuran file terlalu besar. Maksimal 5MB." });
+                    }
+
+                    // Create unique filename
+                    var fileName = $"asset_scan_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid().ToString("N")[..8]}{fileExtension}";
+                    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                    
+                    // Ensure directory exists
+                    if (!Directory.Exists(uploadsPath))
+                    {
+                        Directory.CreateDirectory(uploadsPath);
+                    }
+
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    // Save file
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await fotoFile.CopyToAsync(stream);
+                    }
+
+                    // Store relative path
+                    fotoPath = $"/uploads/{fileName}";
+                }
+
                 using var transaction = _context.Database.BeginTransaction();
 
                 var assetIn = new TblMAssetIn
@@ -213,7 +255,7 @@ namespace AssetTaking.Controllers.Api
                     KodeBarang = request.KodeBarang,
                     KategoriBarang = request.KategoriBarang,
                     Qty = request.Qty,
-                    Foto = request.Foto,
+                    Foto = fotoPath,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "Scanner User" // Could be updated to use session user
                 };
@@ -229,7 +271,7 @@ namespace AssetTaking.Controllers.Api
                     KodeBarang = request.KodeBarang,
                     KategoriBarang = request.KategoriBarang,
                     Qty = request.Qty,
-                    Foto = request.Foto,
+                    Foto = fotoPath,
                     Status = (int)StatusAsset.In,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "Scanner User"

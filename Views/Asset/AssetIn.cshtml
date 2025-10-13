@@ -185,7 +185,7 @@
                                 </h5>
                             </div>
                             <div class="card-body">
-                                <form id="scannedAssetForm">
+                                <form id="scannedAssetForm" enctype="multipart/form-data">
                                     <div class="mb-3">
                                         <label class="form-label" for="scan_nomorAsset">Nomor Asset</label>
                                         <input type="text" class="form-control" id="scan_nomorAsset" name="nomorAsset" readonly>
@@ -211,8 +211,15 @@
                                         <input type="number" class="form-control" id="scan_qty" name="qty" min="1" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label" for="scan_foto">Foto</label>
-                                        <input type="text" class="form-control" id="scan_foto" name="foto">
+                                        <label class="form-label" for="scan_fotoFile">Foto Asset</label>
+                                        <input type="file" class="form-control" id="scan_fotoFile" name="fotoFile" accept="image/*">
+                                        <div class="form-text text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            Format yang didukung: JPG, JPEG, PNG, GIF (Max: 5MB)
+                                        </div>
+                                        <div id="scan_imagePreview" class="mt-2" style="display:none;">
+                                            <img id="scan_previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+                                        </div>
                                     </div>
                                     
                                     <div class="d-grid gap-2">
