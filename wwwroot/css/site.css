@@ -1,0 +1,208 @@
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+html {
+  position: relative;
+  min-height: 100%;
+}
+
+body {
+  margin-bottom: 60px;
+}
+
+/* Notification Styles */
+.notification-dropdown {
+    border: 1px solid #e3e6f0;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+    border-radius: 0.35rem;
+}
+
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #f8f9fa;
+    transition: background-color 0.2s ease;
+    cursor: pointer;
+}
+
+.notification-item:hover {
+    background-color: #f8f9fa;
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.75rem;
+    flex-shrink: 0;
+}
+
+.notification-icon.asset-in {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.notification-icon.asset-out {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.notification-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.notification-title {
+    font-weight: 600;
+    color: #5a5c69;
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.notification-desc {
+    font-size: 0.85rem;
+    color: #858796;
+    margin-bottom: 0.25rem;
+}
+
+.notification-time {
+    font-size: 0.75rem;
+    color: #a8aeb7;
+}
+
+.notification-badge {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+}
+
+#notificationBell {
+    position: relative;
+}
+
+#notificationCount {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.4rem;
+    min-width: 1.2rem;
+    height: 1.2rem;
+    line-height: 0.8;
+    margin-top: -0.6rem;
+    margin-left: -0.6rem;
+}
+
+.dropdown-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e3e6f0;
+    padding: 0.75rem 1rem;
+}
+
+.notification-empty {
+    padding: 2rem 1rem;
+    text-align: center;
+    color: #858796;
+}
+
+.notification-empty .btn {
+    margin-top: 0.5rem;
+}
+
+/* Animation for notification bell */
+@keyframes bellRing {
+    0% { transform: rotate(0deg); }
+    10% { transform: rotate(10deg); }
+    20% { transform: rotate(-10deg); }
+    30% { transform: rotate(10deg); }
+    40% { transform: rotate(-10deg); }
+    50% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+}
+
+.bell-ring {
+    animation: bellRing 0.8s ease-in-out;
+}
+
+/* QR Scanner Styles */
+#qr-reader {
+    border: 2px dashed #dee2e6;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+
+#qr-reader video {
+    border-radius: 0.375rem;
+    width: 100% !important;
+    height: auto !important;
+}
+
+#qr-reader canvas {
+    border-radius: 0.375rem;
+}
+
+.scanner-overlay {
+    position: relative;
+}
+
+.scanner-overlay::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px;
+    height: 200px;
+    border: 2px solid #007bff;
+    border-radius: 10px;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* Tab content styling for Asset In */
+.nav-tabs .nav-link.active {
+    background-color: #e7f3ff;
+    border-color: #007bff;
+    color: #007bff;
+}
+
+.card {
+    border: 1px solid #e3e6f0;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+/* Scanner status animations */
+@keyframes scannerPulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.scanning {
+    animation: scannerPulse 2s infinite;
+}
+
+.scan-success {
+    animation: none;
+}

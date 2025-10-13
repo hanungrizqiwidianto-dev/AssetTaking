@@ -1,0 +1,106 @@
+
+@{
+    ViewData["Title"] = "Task Management - App Detail";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2 class="content-heading">Task Detail</h2>
+
+<input type="hidden" id="appId" value="@ViewBag.AppId" />
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">Task List</h3>
+        <div class="block-options">
+            <button type="button" class="btn btn-success py-2 mb-0" data-bs-toggle="modal" data-bs-target="#modal-task">
+                <i class="fa fa-add opacity-50 me-1"></i> Add Task
+            </button>
+        </div>
+    </div>
+    <div class="block-content block-content-full">
+        <table class="table table-bordered table-striped table-vcenter w-100" id="tbl_task">
+            <thead class="text-center">
+                <tr>
+                    <th>Task Name</th>
+                    <th>Role</th>
+                    <th>Assigned To</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal Add/Edit -->
+<div class="modal" id="modal-task" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="block block-rounded mb-0">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">Add / Edit Task</h3>
+                    <button type="button" class="btn-block-option" data-bs-dismiss="modal" aria-label="Close">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+                <div class="block-content">
+                    <input type="hidden" id="taskId" />
+
+                    <div class="mb-3">
+                        <label>Task Name</label>
+                        <input type="text" id="taskName" class="form-control" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Role</label>
+                        <select id="taskRole" class="form-control">
+                            <option>Frontend</option>
+                            <option>Backend</option>
+                            <option>UI/UX</option>
+                            <option>QA</option>
+                            <option>System Analyst</option>
+                            <option>Business Analyst</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Assigned To</label>
+                        <select id="assignedTo" class="form-control"></select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Status</label>
+                        <select id="taskStatus" class="form-control">
+                            <option value="1">Pending</option>
+                            <option value="2">In Progress</option>
+                            <option value="3">Done</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label>Progress</label>
+                        <select id="taskProgress" class="form-control">
+                            <option value="0">Development</option>
+                            <option value="20">Testing on Development</option>
+                            <option value="40">Up to Staging</option>
+                            <option value="60">Testing on Staging</option>
+                            <option value="80">Prepared to Production</option>
+                            <option value="100">Production Done</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="block-content text-end border-top">
+                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-alt-primary" id="btnSaveTask">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    <script src="~/js/AssetDetail.js"></script>
+}

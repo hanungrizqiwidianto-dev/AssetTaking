@@ -1,0 +1,145 @@
+@using Microsoft.AspNetCore.Http
+@inject IHttpContextAccessor HttpContextAccessor
+
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - AssetTaking</title>
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="~/assets/js/plugins/select2/css/select2.min.css" />
+    <link rel="stylesheet" href="~/assets/js/plugins/sweetalert2/sweetalert2.min.css" />
+    <link rel="stylesheet" href="~/assets/js/plugins/datatables-bs5/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="~/assets/js/plugins/datatables-buttons-bs5/css/buttons.bootstrap5.min.css" />
+    <link rel="stylesheet" href="~/assets/js/plugins/datatables-responsive-bs5/css/responsive.bootstrap5.min.css" />
+
+    <link rel="stylesheet" id="css-main" href="~/assets/css/codebase.min.css" />
+    <link id="css-theme" rel="stylesheet" href="~/assets/css/themes/corporate.min.css" />
+    <link href="~/css/site.css" rel="stylesheet" />
+
+    <script src="~/assets/js/lib/jquery.min.js"></script>
+    <script src="~/assets/js/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/assets/js/plugins/datatables-bs5/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/assets/js/plugins/datatables-responsive/js/dataTables.responsive.min.js"></script>
+    <script src="~/assets/js/plugins/datatables-responsive-bs5/js/responsive.bootstrap5.min.js"></script>
+    <script src="~/assets/js/plugins/datatables-buttons/dataTables.buttons.min.js"></script>
+    <script src="~/assets/js/plugins/datatables-buttons-bs5/js/buttons.bootstrap5.min.js"></script>
+    <script src="~/assets/js/plugins/datatables-buttons-jszip/jszip.min.js"></script>
+    <script src="~/assets/js/plugins/datatables-buttons-pdfmake/pdfmake.min.js"></script>
+    <script src="~/assets/js/plugins/datatables-buttons-pdfmake/vfs_fonts.js"></script>
+    <script src="~/assets/js/plugins/datatables-buttons/buttons.print.min.js"></script>
+    <script src="~/assets/js/plugins/datatables-buttons/buttons.html5.min.js"></script>
+    <script src="~/js/moment.min.js"></script>
+</head>
+<body>
+    <input type="hidden" id="hd_nrp" value="@HttpContextAccessor.HttpContext?.Session.GetString("Nrp")" />
+    <input type="hidden" id="hd_role" value="@HttpContextAccessor.HttpContext?.Session.GetInt32("ID_Role")" />
+    <input type="hidden" id="web_link" value="@HttpContextAccessor.HttpContext?.Session.GetString("Web_Link")" />
+
+    <div id="overlay">
+        <div class="cv-spinner">
+            <span class="spinner"></span>
+        </div>
+    </div>
+
+    <div id="page-container" class="sidebar-o enable-page-overlay side-scroll page-header-modern main-content-boxed side-trans-enabled">
+        <div id="page-overlay"></div>
+
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="sidebar-content">
+                <div class="content-header justify-content-lg-center">
+                    <div>
+                        <a class="link-fx fw-bold tracking-wide mx-auto" href="/Home/Index">
+                            <i class="fa fa-cogs text-primary"></i>
+                            <span class="fs-4 text-dual">Asset</span><span class="fs-4 text-primary">Taking</span>
+                        </a>
+                    </div>
+                </div>
+                <div class="js-sidebar-scroll">
+                    <div class="content-side content-side-user px-0 py-0">
+                        <div class="smini-hidden text-center mx-auto">
+                            <a class="img-link" href="#">
+                                <img class="img-avatar" src="~/assets/media/avatars/avatar15.jpg" alt="">
+                            </a>
+                            <ul class="list-inline mt-3 mb-0">
+                                <li class="list-inline-item">
+                                    <a class="link-fx text-dual fs-sm fw-semibold text-uppercase" href="#">
+                                        @HttpContextAccessor.HttpContext?.Session.GetString("Name")
+                                    </a>
+                                    <a class="link-fx text-dual" href="/Login/Logout">
+                                        <i class="fa fa-sign-out-alt"></i>
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Navigation -->
+                    <div class="content-side content-side-full">
+                        @await Component.InvokeAsync("SidebarMenu") <!-- pakai ViewComponent -->
+                    </div>
+                </div>
+            </div>
+        </nav>
+        <!-- END Sidebar -->
+        <!-- Header -->
+        <header id="page-header">
+            <div class="content-header">
+                <div class="space-x-1">
+                    <button type="button" class="btn btn-sm btn-alt-secondary" data-toggle="layout" data-action="sidebar_toggle">
+                        <i class="fa fa-fw fa-bars"></i>
+                    </button>
+                </div>
+                <div class="d-flex align-items-center space-x-1">
+                    <!-- Notification Bell -->
+                    <div class="dropdown me-3" id="notificationDropdown">
+                        <button type="button" class="btn btn-sm btn-alt-secondary position-relative dropdown-toggle" id="notificationBell" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fa fa-bell"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="notificationCount" style="display: none;">
+                                0
+                            </span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end notification-dropdown" style="min-width: 350px; max-height: 400px; overflow-y: auto;">
+                            <li class="dropdown-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">Notifikasi</h6>
+                                <small class="text-muted" id="notificationTotal">0 item</small>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li id="notificationList">
+                                <div class="text-center p-3 text-muted">
+                                    <i class="fa fa-bell-slash fa-2x mb-2"></i>
+                                    <div>Tidak ada notifikasi</div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <span class="fw-semibold">@HttpContextAccessor.HttpContext?.Session.GetString("Name")</span>
+                </div>
+            </div>
+        </header>
+        <!-- END Header -->
+
+        <main id="main-container">
+            <div class="content">
+                @RenderBody()
+            </div>
+        </main>
+
+        <footer id="page-footer">
+            <div class="content py-3 text-center">
+                AssetTaking � @DateTime.Now.Year
+            </div>
+        </footer>
+    </div>
+
+    <script src="~/assets/js/codebase.app.min.js"></script>
+    <script src="~/assets/js/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/assets/js/plugins/select2/js/select2.full.min.js"></script>
+    <script src="~/js/notification.js"></script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

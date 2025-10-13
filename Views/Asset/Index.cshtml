@@ -1,0 +1,31 @@
+@{
+    ViewData["Title"] = "Task Management - App List";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2 class="content-heading">Task Management</h2>
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">Application List</h3>
+    </div>
+    <div class="block-content block-content-full">
+        <table id="tbl_apps"
+               class="table table-bordered table-striped table-vcenter js-dataTable-responsive w-100">
+            <thead class="text-center bg-primary text-white">
+                <tr>
+                    <th>App Name</th>
+                    <th>Division</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/AssetIndex.js"></script>
+}

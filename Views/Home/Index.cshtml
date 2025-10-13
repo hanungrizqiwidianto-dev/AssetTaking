@@ -1,0 +1,195 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<h2 class="content-heading">Dashboard <small>Asset Management Overview</small></h2>
+
+<!-- Stats Cards Row -->
+<div class="row">
+    <div class="col-6 col-lg-3">
+        <div class="block block-rounded block-link-pop text-center">
+            <div class="block-content block-content-full">
+                <div class="fs-2 fw-bold text-primary" id="statTotalAssets">-</div>
+                <div class="fs-sm fw-medium text-muted text-uppercase">Total Assets</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="block block-rounded block-link-pop text-center">
+            <div class="block-content block-content-full">
+                <div class="fs-2 fw-bold text-success" id="statAssetIn">-</div>
+                <div class="fs-sm fw-medium text-muted text-uppercase">Asset In</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="block block-rounded block-link-pop text-center">
+            <div class="block-content block-content-full">
+                <div class="fs-2 fw-bold text-warning" id="statAssetOut">-</div>
+                <div class="fs-sm fw-medium text-muted text-uppercase">Asset Out</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="block block-rounded block-link-pop text-center">
+            <div class="block-content block-content-full">
+                <div class="fs-2 fw-bold text-info" id="statCategories">-</div>
+                <div class="fs-sm fw-medium text-muted text-uppercase">Categories</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Lists Row -->
+<div class="row">
+    <div class="col-lg-4">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-arrow-down text-success me-1"></i>
+                    Top 3 Asset In
+                </h3>
+            </div>
+            <div class="block-content block-content-full">
+                <div id="topAssetInList">
+                    <div class="text-center py-4">
+                        <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                        <div class="mt-2 text-muted">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-arrow-up text-warning me-1"></i>
+                    Top 3 Asset Out
+                </h3>
+            </div>
+            <div class="block-content block-content-full">
+                <div id="topAssetOutList">
+                    <div class="text-center py-4">
+                        <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                        <div class="mt-2 text-muted">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-clock text-info me-1"></i>
+                    Oldest Stored Assets
+                </h3>
+            </div>
+            <div class="block-content block-content-full">
+                <div id="oldestAssetsList">
+                    <div class="text-center py-4">
+                        <i class="fa fa-spinner fa-spin fa-2x text-muted"></i>
+                        <div class="mt-2 text-muted">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-pie-chart text-primary me-1"></i>
+                    Assets by Category
+                </h3>
+                <div class="block-options">
+                    <div class="dropdown">
+                        <button type="button" class="btn-block-option" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-filter"></i>
+                        </button>
+                        <div class="dropdown-menu dropdown-menu-end">
+                            <a class="dropdown-item" href="#" onclick="updateCategoryChart(null)">All Assets</a>
+                            <a class="dropdown-item" href="#" onclick="updateCategoryChart(1)">Asset In Only</a>
+                            <a class="dropdown-item" href="#" onclick="updateCategoryChart(2)">Asset Out Only</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="block-content">
+                <canvas id="categoryChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-line-chart text-success me-1"></i>
+                    Monthly Trend (2025)
+                </h3>
+            </div>
+            <div class="block-content">
+                <canvas id="monthlyTrendChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Additional Charts Row -->
+<div class="row">
+    <div class="col-lg-6">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-bar-chart text-info me-1"></i>
+                    Asset In vs Out Status
+                </h3>
+            </div>
+            <div class="block-content">
+                <canvas id="statusChart" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-area-chart text-danger me-1"></i>
+                    This Month Activity
+                </h3>
+            </div>
+            <div class="block-content">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="fs-1 fw-bold text-success" id="monthlyAssetIn">-</div>
+                        <div class="fs-sm fw-medium text-muted text-uppercase">Assets In</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="fs-1 fw-bold text-warning" id="monthlyAssetOut">-</div>
+                        <div class="fs-sm fw-medium text-muted text-uppercase">Assets Out</div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar bg-success" role="progressbar" id="monthlyInProgress" style="width: 0%"></div>
+                            <div class="progress-bar bg-warning" role="progressbar" id="monthlyOutProgress" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/Dashboard.js"></script>
+}

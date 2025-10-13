@@ -1,0 +1,59 @@
+@{
+    ViewData["Title"] = "Review Assets";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2 class="content-heading">Review Assets</h2>
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            Asset Summary <small>Grouped by Code and Asset Number</small>
+        </h3>
+    </div>
+    <div class="block-content block-content-full">
+        <table class="table table-bordered table-striped table-vcenter js-dataTable-responsive w-100" id="tbl_assets">
+            <thead class="text-center bg-primary text-white">
+                <tr>
+                    <th>Kode Barang</th>
+                    <th>Nomor Asset</th>
+                    <th>Nama Barang</th>
+                    <th>Kategori</th>
+                    <th>Created At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Modal for Asset Details -->
+<div class="modal" id="assetDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="block block-rounded shadow-none mb-0">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">Asset Details</h3>
+                    <div class="block-options">
+                        <button type="button" class="btn-block-option" data-bs-dismiss="modal" aria-label="Close">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content">
+                    <div id="assetDetailsContainer">
+                        <!-- Asset details will be loaded here -->
+                    </div>
+                </div>
+                <div class="block-content block-content-full block-content-sm text-end border-top">
+                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/ReviewAssets.js"></script>
+}

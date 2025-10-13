@@ -1,0 +1,121 @@
+﻿{
+   "CodeGenerationMode": 4,
+   "ContextClassName": "DB_TECH_TESTContext",
+   "ContextNamespace": null,
+   "FilterSchemas": false,
+   "IncludeConnectionString": false,
+   "ModelNamespace": null,
+   "OutputContextPath": null,
+   "OutputPath": "Models",
+   "PreserveCasingWithRegex": true,
+   "ProjectRootNamespace": "AssetTaking",
+   "Schemas": null,
+   "SelectedHandlebarsLanguage": 2,
+   "SelectedToBeGenerated": 0,
+   "T4TemplatePath": null,
+   "Tables": [
+      {
+         "Name": "[dbo].[Table_1]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TBL_M_AKSES]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TBL_M_ROLE]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TBL_M_USER]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TBL_R_MASTER_KARYAWAN_ALL]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TBL_R_MENU]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TBL_R_SUB_MENU]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TBL_T_APP]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[TBL_TASKS]",
+         "ObjectType": 0
+      },
+      {
+         "Name": "[dbo].[VW_M_AKSES]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[VW_MENU]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[VW_R_MENU]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[VW_User]",
+         "ObjectType": 3
+      },
+      {
+         "Name": "[dbo].[sp_RegisterApp_ApproveDivHead]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[sp_RegisterApp_ApproveITHead]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[sp_RegisterApp_Create]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[sp_RegisterApp_RejectDivHead]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[sp_RegisterApp_RejectITHead]",
+         "ObjectType": 1
+      },
+      {
+         "Name": "[dbo].[sp_RegisterApp_Update]",
+         "ObjectType": 1
+      }
+   ],
+   "UiHint": null,
+   "UncountableWords": null,
+   "UseAsyncStoredProcedureCalls": true,
+   "UseBoolPropertiesWithoutDefaultSql": false,
+   "UseDatabaseNames": false,
+   "UseDatabaseNamesForRoutines": true,
+   "UseDateOnlyTimeOnly": true,
+   "UseDbContextSplitting": false,
+   "UseDecimalDataAnnotationForSprocResult": true,
+   "UseFluentApiOnly": true,
+   "UseHandleBars": false,
+   "UseHierarchyId": false,
+   "UseInflector": true,
+   "UseInternalAccessModifiersForSprocsAndFunctions": false,
+   "UseLegacyPluralizer": false,
+   "UseManyToManyEntity": false,
+   "UseNoDefaultConstructor": false,
+   "UseNoNavigations": false,
+   "UseNoObjectFilter": false,
+   "UseNodaTime": false,
+   "UseNullableReferences": false,
+   "UsePrefixNavigationNaming": false,
+   "UseSchemaFolders": false,
+   "UseSchemaNamespaces": false,
+   "UseSpatial": false,
+   "UseT4": false,
+   "UseT4Split": false
+}

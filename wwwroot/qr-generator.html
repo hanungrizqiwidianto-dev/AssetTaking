@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QR Code Generator for Testing</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .qr-section { margin: 20px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        textarea { width: 100%; height: 100px; margin: 10px 0; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        #qrcode { margin: 20px 0; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>QR Code Generator untuk Testing Asset Taking</h1>
+        
+        <div class="qr-section">
+            <h3>1. Generate QR dengan JSON Data</h3>
+            <textarea id="jsonData" placeholder="Edit JSON data di bawah ini">{"nomorAsset":"LAP001","namaBarang":"Laptop Dell Inspiron 15","kodeBarang":"LAP","kategoriBarang":"RnD","foto":"laptop.jpg"}</textarea>
+            <button onclick="generateQRFromJSON()">Generate QR dari JSON</button>
+        </div>
+        
+        <div class="qr-section">
+            <h3>2. Generate QR dengan Data Simple</h3>
+            <input type="text" id="simpleData" value="LAP002" placeholder="Masukkan nomor asset atau nama barang" style="width: 100%; padding: 10px; margin: 10px 0;">
+            <button onclick="generateQRFromSimple()">Generate QR Simple</button>
+        </div>
+        
+        <div class="qr-section">
+            <h3>3. Hasil QR Code</h3>
+            <div id="qrcode"></div>
+            <p id="qrInfo" style="font-style: italic; color: #666;"></p>
+        </div>
+        
+        <div class="qr-section">
+            <h3>4. Contoh Data JSON yang Bisa Digunakan</h3>
+            <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px;">
+{
+    "nomorAsset": "LAP001",
+    "namaBarang": "Laptop Dell Inspiron 15",
+    "kodeBarang": "LAP",
+    "kategoriBarang": "RnD",
+    "foto": "laptop.jpg"
+}
+
+{
+    "nomorAsset": "MOU001", 
+    "namaBarang": "Mouse Wireless Logitech",
+    "kodeBarang": "MOU",
+    "kategoriBarang": "SPAREPART"
+}
+
+{
+    "nomorAsset": "KEY001",
+    "namaBarang": "Keyboard Mechanical RGB",
+    "kodeBarang": "KEY", 
+    "kategoriBarang": "RnD"
+}
+            </pre>
+        </div>
+    </div>
+
+    <script>
+        function generateQRFromJSON() {
+            const jsonText = document.getElementById('jsonData').value;
+            try {
+                const parsed = JSON.parse(jsonText);
+                generateQR(jsonText, `QR Code dengan JSON data: ${parsed.namaBarang || 'No Name'}`);
+            } catch (e) {
+                alert('JSON tidak valid. Silakan periksa format JSON Anda.');
+            }
+        }
+        
+        function generateQRFromSimple() {
+            const simpleText = document.getElementById('simpleData').value;
+            if (simpleText.trim()) {
+                generateQR(simpleText, `QR Code simple: ${simpleText}`);
+            } else {
+                alert('Silakan masukkan data terlebih dahulu.');
+            }
+        }
+        
+        function generateQR(data, info) {
+            const qrCodeDiv = document.getElementById('qrcode');
+            const qrInfo = document.getElementById('qrInfo');
+            
+            // Clear previous QR code
+            qrCodeDiv.innerHTML = '';
+            
+            // Generate new QR code
+            QRCode.toCanvas(qrCodeDiv, data, {
+                width: 300,
+                height: 300,
+                margin: 2,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                }
+            }, function (error) {
+                if (error) {
+                    console.error(error);
+                    qrInfo.textContent = 'Error generating QR code: ' + error;
+                } else {
+                    qrInfo.textContent = info;
+                    console.log('QR code generated successfully');
+                }
+            });
+        }
+        
+        // Generate default QR on page load
+        window.onload = function() {
+            generateQRFromJSON();
+        };
+    </script>
+</body>
+</html>

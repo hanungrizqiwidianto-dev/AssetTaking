@@ -1,0 +1,42 @@
+@model IEnumerable<AssetTaking.Models.VwRMenu>
+
+@{
+    ViewBag.url = Context.Request.Path;
+}
+
+<ul class="nav-main">
+    @foreach (var item in Model)
+    {
+        if (item.SubMenu == 1)
+        {
+            <li class="nav-main-item">
+                <a class="nav-main-link nav-main-link-submenu" data-toggle="submenu" href="#">
+                    <i class="nav-main-link-icon fa @item.IconMenu"></i>
+                    <span class="nav-main-link-name">@item.NameMenu</span>
+                </a>
+                <ul class="nav-main-submenu">
+                    @foreach (var sub in ViewBag.Sub)
+                    {
+                        if (sub.IdMenu == item.IdMenu)
+                        {
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" href="@sub.LinkSubMenu">
+                                    <span class="nav-main-link-name">@sub.SubMenuDescription</span>
+                                </a>
+                            </li>
+                        }
+                    }
+                </ul>
+            </li>
+        }
+        else
+        {
+            <li class="nav-main-item">
+                <a class="nav-main-link" href="@item.LinkMenu">
+                    <i class="nav-main-link-icon fa @item.IconMenu"></i>
+                    <span class="nav-main-link-name">@item.NameMenu</span>
+                </a>
+            </li>
+        }
+    }
+</ul>
