@@ -7,6 +7,34 @@
 
 <h2 class="content-heading">Dashboard <small>Asset Management Overview</small></h2>
 
+<!-- Date Filter Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="block block-rounded">
+            <div class="block-content block-content-full">
+                <form class="row g-3 align-items-end" id="dateFilterForm">
+                    <div class="col-md-4">
+                        <label for="startDate" class="form-label">Tanggal Mulai</label>
+                        <input type="date" class="form-control" id="startDate" name="startDate">
+                    </div>
+                    <div class="col-md-4">
+                        <label for="endDate" class="form-label">Tanggal Akhir</label>
+                        <input type="date" class="form-control" id="endDate" name="endDate">
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-primary me-2" id="applyFilter">
+                            <i class="fa fa-filter me-1"></i> Terapkan Filter
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="resetFilter">
+                            <i class="fa fa-refresh me-1"></i> Reset
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Stats Cards Row -->
 <div class="row">
     <div class="col-6 col-lg-3">

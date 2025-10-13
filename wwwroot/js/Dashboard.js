@@ -5,20 +5,97 @@ var categoryChart = null;
 var monthlyTrendChart = null;
 var statusChart = null;
 
+// Global variables for date filter
+var currentStartDate = null;
+var currentEndDate = null;
+
 $(document).ready(function () {
     console.log('Dashboard ready');
+    
+    // Set default date filter to current month
+    setDefaultDateFilter();
+    
+    // Initialize event handlers
+    initializeDateFilter();
+    
+    // Initialize charts first
+    initializeCategoryChart();
+    initializeMonthlyTrendChart();
+    initializeStatusChart();
+    
+    // Load dashboard data with default filter
+    loadAllDashboardData();
+});
+
+function setDefaultDateFilter() {
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    
+    const startDateStr = firstDay.toISOString().split('T')[0];
+    const endDateStr = lastDay.toISOString().split('T')[0];
+    
+    $('#startDate').val(startDateStr);
+    $('#endDate').val(endDateStr);
+    
+    currentStartDate = startDateStr;
+    currentEndDate = endDateStr;
+}
+
+function initializeDateFilter() {
+    $('#applyFilter').on('click', function() {
+        const startDate = $('#startDate').val();
+        const endDate = $('#endDate').val();
+        
+        if (!startDate || !endDate) {
+            alert('Harap pilih tanggal mulai dan tanggal akhir');
+            return;
+        }
+        
+        if (new Date(startDate) > new Date(endDate)) {
+            alert('Tanggal mulai tidak boleh lebih besar dari tanggal akhir');
+            return;
+        }
+        
+        currentStartDate = startDate;
+        currentEndDate = endDate;
+        
+        loadAllDashboardData();
+    });
+    
+    $('#resetFilter').on('click', function() {
+        setDefaultDateFilter();
+        loadAllDashboardData();
+    });
+}
+
+function loadAllDashboardData() {
     loadDashboardData();
     loadTopAssetIn();
     loadTopAssetOut();
     loadOldestAssets();
-    initializeCategoryChart();
-    initializeMonthlyTrendChart();
-    initializeStatusChart();
-});
+    updateCategoryChart(null);
+    updateMonthlyTrendChart();
+    updateStatusChart();
+}
+
+function getDateFilterParams() {
+    const params = new URLSearchParams();
+    if (currentStartDate) {
+        params.append('startDate', currentStartDate);
+    }
+    if (currentEndDate) {
+        params.append('endDate', currentEndDate);
+    }
+    return params.toString();
+}
 
 function loadDashboardData() {
+    const params = getDateFilterParams();
+    const url = '/api/Dashboard/GetDashboardStats' + (params ? '?' + params : '');
+    
     $.ajax({
-        url: '/api/Dashboard/GetDashboardStats',
+        url: url,
         type: 'GET',
         success: function (data) {
             console.log('Dashboard stats loaded:', data);
@@ -44,8 +121,11 @@ function loadDashboardData() {
 }
 
 function loadTopAssetIn() {
+    const params = getDateFilterParams();
+    const url = '/api/Dashboard/GetTopAssetIn' + (params ? '?' + params : '');
+    
     $.ajax({
-        url: '/api/Dashboard/GetTopAssetIn',
+        url: url,
         type: 'GET',
         success: function (data) {
             console.log('Top Asset In loaded:', data);
@@ -84,8 +164,11 @@ function loadTopAssetIn() {
 }
 
 function loadTopAssetOut() {
+    const params = getDateFilterParams();
+    const url = '/api/Dashboard/GetTopAssetOut' + (params ? '?' + params : '');
+    
     $.ajax({
-        url: '/api/Dashboard/GetTopAssetOut',
+        url: url,
         type: 'GET',
         success: function (data) {
             console.log('Top Asset Out loaded:', data);
@@ -124,8 +207,11 @@ function loadTopAssetOut() {
 }
 
 function loadOldestAssets() {
+    const params = getDateFilterParams();
+    const url = '/api/Dashboard/GetOldestAssets' + (params ? '?' + params : '');
+    
     $.ajax({
-        url: '/api/Dashboard/GetOldestAssets',
+        url: url,
         type: 'GET',
         success: function (data) {
             console.log('Oldest Assets loaded:', data);
@@ -214,15 +300,22 @@ function initializeCategoryChart() {
 }
 
 function updateCategoryChart(status) {
-    var requestData = {};
+    const params = new URLSearchParams();
     if (status !== null) {
-        requestData.status = status;
+        params.append('status', status);
+    }
+    if (currentStartDate) {
+        params.append('startDate', currentStartDate);
+    }
+    if (currentEndDate) {
+        params.append('endDate', currentEndDate);
     }
     
+    const url = '/api/Dashboard/GetAssetsByCategory' + (params.toString() ? '?' + params.toString() : '');
+    
     $.ajax({
-        url: '/api/Dashboard/GetAssetsByCategory',
+        url: url,
         type: 'GET',
-        data: requestData,
         success: function (data) {
             console.log('Category chart data loaded:', data);
             if (categoryChart && data) {
@@ -252,8 +345,11 @@ function initializeMonthlyTrendChart() {
         return;
     }
     
+    const params = getDateFilterParams();
+    const url = '/api/Dashboard/GetMonthlyTrend' + (params ? '?' + params : '');
+    
     $.ajax({
-        url: '/api/Dashboard/GetMonthlyTrend',
+        url: url,
         type: 'GET',
         success: function (data) {
             console.log('Monthly trend data loaded:', data);
@@ -326,8 +422,11 @@ function initializeStatusChart() {
         return;
     }
     
+    const params = getDateFilterParams();
+    const url = '/api/Dashboard/GetDashboardStats' + (params ? '?' + params : '');
+    
     $.ajax({
-        url: '/api/Dashboard/GetDashboardStats',
+        url: url,
         type: 'GET',
         success: function (data) {
             console.log('Status chart data loaded:', data);
@@ -367,6 +466,66 @@ function initializeStatusChart() {
         },
         error: function (xhr, status, error) {
             console.error('Error loading status chart data:', error);
+        }
+    });
+}
+
+function updateMonthlyTrendChart() {
+    if (!monthlyTrendChart) {
+        initializeMonthlyTrendChart();
+        return;
+    }
+    
+    const params = getDateFilterParams();
+    const url = '/api/Dashboard/GetMonthlyTrend' + (params ? '?' + params : '');
+    
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (data) {
+            console.log('Monthly trend data updated:', data);
+            
+            var labels = [];
+            var assetInData = [];
+            var assetOutData = [];
+            
+            for (var i = 0; i < data.length; i++) {
+                labels.push(data[i].monthName);
+                assetInData.push(data[i].assetIn);
+                assetOutData.push(data[i].assetOut);
+            }
+            
+            monthlyTrendChart.data.labels = labels;
+            monthlyTrendChart.data.datasets[0].data = assetInData;
+            monthlyTrendChart.data.datasets[1].data = assetOutData;
+            monthlyTrendChart.update();
+        },
+        error: function (xhr, status, error) {
+            console.error('Error updating monthly trend data:', error);
+        }
+    });
+}
+
+function updateStatusChart() {
+    if (!statusChart) {
+        initializeStatusChart();
+        return;
+    }
+    
+    const params = getDateFilterParams();
+    const url = '/api/Dashboard/GetDashboardStats' + (params ? '?' + params : '');
+    
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function (data) {
+            console.log('Status chart data updated:', data);
+            
+            statusChart.data.datasets[0].data = [data.totalAssetIn || 0, data.totalAssetOut || 0];
+            statusChart.update();
+        },
+        error: function (xhr, status, error) {
+            console.error('Error updating status chart data:', error);
         }
     });
 }

@@ -16,11 +16,23 @@ namespace AssetTaking.Controllers.Api
         }
 
         [HttpGet("GetTopAssetIn")]
-        public IActionResult GetTopAssetIn()
+        public IActionResult GetTopAssetIn([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             try
             {
-                var topAssetIn = _context.TblMAssetIns
+                var query = _context.TblMAssetIns.AsQueryable();
+
+                // Apply date filter
+                if (startDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt >= startDate.Value);
+                }
+                if (endDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt <= endDate.Value.AddDays(1).AddTicks(-1));
+                }
+
+                var topAssetIn = query
                     .OrderByDescending(a => a.Qty)
                     .Take(3)
                     .Select(a => new
@@ -45,11 +57,23 @@ namespace AssetTaking.Controllers.Api
         }
 
         [HttpGet("GetTopAssetOut")]
-        public IActionResult GetTopAssetOut()
+        public IActionResult GetTopAssetOut([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             try
             {
-                var topAssetOut = _context.TblMAssetOuts
+                var query = _context.TblMAssetOuts.AsQueryable();
+
+                // Apply date filter
+                if (startDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt >= startDate.Value);
+                }
+                if (endDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt <= endDate.Value.AddDays(1).AddTicks(-1));
+                }
+
+                var topAssetOut = query
                     .OrderByDescending(a => a.Qty)
                     .Take(3)
                     .Select(a => new
@@ -74,12 +98,23 @@ namespace AssetTaking.Controllers.Api
         }
 
         [HttpGet("GetOldestAssets")]
-        public IActionResult GetOldestAssets()
+        public IActionResult GetOldestAssets([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             try
             {
-                var oldestAssets = _context.TblTAssets
-                    .Where(a => a.Status == 1) // Asset In
+                var query = _context.TblTAssets.Where(a => a.Status == 1); // Asset In
+
+                // Apply date filter
+                if (startDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt >= startDate.Value);
+                }
+                if (endDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt <= endDate.Value.AddDays(1).AddTicks(-1));
+                }
+
+                var oldestAssets = query
                     .OrderBy(a => a.TanggalMasuk)
                     .Take(3)
                     .Select(a => new
@@ -105,7 +140,7 @@ namespace AssetTaking.Controllers.Api
         }
 
         [HttpGet("GetAssetsByCategory")]
-        public IActionResult GetAssetsByCategory([FromQuery] int? status = null)
+        public IActionResult GetAssetsByCategory([FromQuery] int? status = null, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             try
             {
@@ -114,6 +149,16 @@ namespace AssetTaking.Controllers.Api
                 if (status.HasValue)
                 {
                     query = query.Where(a => a.Status == status.Value);
+                }
+
+                // Apply date filter
+                if (startDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt >= startDate.Value);
+                }
+                if (endDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt <= endDate.Value.AddDays(1).AddTicks(-1));
                 }
 
                 var assetsByCategory = query
@@ -137,30 +182,34 @@ namespace AssetTaking.Controllers.Api
         }
 
         [HttpGet("GetDashboardStats")]
-        public IActionResult GetDashboardStats()
+        public IActionResult GetDashboardStats([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             try
             {
-                var totalAssets = _context.TblTAssets.Count();
-                var totalAssetIn = _context.TblTAssets.Count(a => a.Status == 1);
-                var totalAssetOut = _context.TblTAssets.Count(a => a.Status == 2);
-                var totalCategories = _context.TblTAssets
+                var query = _context.TblTAssets.AsQueryable();
+
+                // Apply date filter
+                if (startDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt >= startDate.Value);
+                }
+                if (endDate.HasValue)
+                {
+                    query = query.Where(a => a.CreatedAt <= endDate.Value.AddDays(1).AddTicks(-1));
+                }
+
+                var totalAssets = query.Count();
+                var totalAssetIn = query.Count(a => a.Status == 1);
+                var totalAssetOut = query.Count(a => a.Status == 2);
+                var totalCategories = query
                     .Where(a => !string.IsNullOrEmpty(a.KategoriBarang))
                     .Select(a => a.KategoriBarang)
                     .Distinct()
                     .Count();
 
-                var monthlyAssetIn = _context.TblTAssets
-                    .Where(a => a.Status == 1 && a.CreatedAt.HasValue && 
-                               a.CreatedAt.Value.Month == DateTime.Now.Month &&
-                               a.CreatedAt.Value.Year == DateTime.Now.Year)
-                    .Count();
-
-                var monthlyAssetOut = _context.TblTAssets
-                    .Where(a => a.Status == 2 && a.CreatedAt.HasValue && 
-                               a.CreatedAt.Value.Month == DateTime.Now.Month &&
-                               a.CreatedAt.Value.Year == DateTime.Now.Year)
-                    .Count();
+                // Use filtered data instead of monthly filter
+                var filteredAssetIn = query.Count(a => a.Status == 1);
+                var filteredAssetOut = query.Count(a => a.Status == 2);
 
                 return Ok(new
                 {
@@ -168,8 +217,8 @@ namespace AssetTaking.Controllers.Api
                     TotalAssetIn = totalAssetIn,
                     TotalAssetOut = totalAssetOut,
                     TotalCategories = totalCategories,
-                    MonthlyAssetIn = monthlyAssetIn,
-                    MonthlyAssetOut = monthlyAssetOut
+                    MonthlyAssetIn = filteredAssetIn,
+                    MonthlyAssetOut = filteredAssetOut
                 });
             }
             catch (Exception ex)
@@ -179,32 +228,70 @@ namespace AssetTaking.Controllers.Api
         }
 
         [HttpGet("GetMonthlyTrend")]
-        public IActionResult GetMonthlyTrend()
+        public IActionResult GetMonthlyTrend([FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             try
             {
                 var currentYear = DateTime.Now.Year;
                 var monthlyData = new List<object>();
 
-                for (int month = 1; month <= 12; month++)
+                // If date filter is applied, use those dates
+                if (startDate.HasValue && endDate.HasValue)
                 {
-                    var assetInCount = _context.TblTAssets
-                        .Count(a => a.Status == 1 && a.CreatedAt.HasValue &&
-                                   a.CreatedAt.Value.Month == month &&
-                                   a.CreatedAt.Value.Year == currentYear);
+                    var currentDate = new DateTime(startDate.Value.Year, startDate.Value.Month, 1);
+                    var endDateMonth = new DateTime(endDate.Value.Year, endDate.Value.Month, 1);
 
-                    var assetOutCount = _context.TblTAssets
-                        .Count(a => a.Status == 2 && a.CreatedAt.HasValue &&
-                                   a.CreatedAt.Value.Month == month &&
-                                   a.CreatedAt.Value.Year == currentYear);
-
-                    monthlyData.Add(new
+                    while (currentDate <= endDateMonth)
                     {
-                        Month = month,
-                        MonthName = new DateTime(currentYear, month, 1).ToString("MMM"),
-                        AssetIn = assetInCount,
-                        AssetOut = assetOutCount
-                    });
+                        var monthStart = currentDate;
+                        var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+                        var assetInCount = _context.TblTAssets
+                            .Count(a => a.Status == 1 && a.CreatedAt.HasValue &&
+                                       a.CreatedAt.Value >= monthStart &&
+                                       a.CreatedAt.Value <= monthEnd.AddDays(1).AddTicks(-1));
+
+                        var assetOutCount = _context.TblTAssets
+                            .Count(a => a.Status == 2 && a.CreatedAt.HasValue &&
+                                       a.CreatedAt.Value >= monthStart &&
+                                       a.CreatedAt.Value <= monthEnd.AddDays(1).AddTicks(-1));
+
+                        monthlyData.Add(new
+                        {
+                            Month = currentDate.Month,
+                            Year = currentDate.Year,
+                            MonthName = currentDate.ToString("MMM yyyy"),
+                            AssetIn = assetInCount,
+                            AssetOut = assetOutCount
+                        });
+
+                        currentDate = currentDate.AddMonths(1);
+                    }
+                }
+                else
+                {
+                    // Default behavior - current year
+                    for (int month = 1; month <= 12; month++)
+                    {
+                        var assetInCount = _context.TblTAssets
+                            .Count(a => a.Status == 1 && a.CreatedAt.HasValue &&
+                                       a.CreatedAt.Value.Month == month &&
+                                       a.CreatedAt.Value.Year == currentYear);
+
+                        var assetOutCount = _context.TblTAssets
+                            .Count(a => a.Status == 2 && a.CreatedAt.HasValue &&
+                                       a.CreatedAt.Value.Month == month &&
+                                       a.CreatedAt.Value.Year == currentYear);
+
+                        monthlyData.Add(new
+                        {
+                            Month = month,
+                            Year = currentYear,
+                            MonthName = new DateTime(currentYear, month, 1).ToString("MMM"),
+                            AssetIn = assetInCount,
+                            AssetOut = assetOutCount
+                        });
+                    }
                 }
 
                 return Ok(monthlyData);
