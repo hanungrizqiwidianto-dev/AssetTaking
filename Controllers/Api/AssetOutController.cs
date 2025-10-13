@@ -16,7 +16,7 @@ namespace AssetTaking.Controllers.Api
         }
 
         [HttpPost("Create")]
-        public IActionResult Create([FromBody] AssetOutRequest request)
+        public async Task<IActionResult> Create([FromForm] AssetOutRequest request, IFormFile? fotoFile)
         {
             try
             {
@@ -35,6 +35,48 @@ namespace AssetTaking.Controllers.Api
                     return BadRequest(new { Remarks = false, Message = "Qty tidak mencukupi. Stok tersedia: " + sourceAsset.Qty });
                 }
 
+                string? fotoPath = sourceAsset.Foto; // Default to source asset's photo
+
+                // Handle file upload if provided
+                if (fotoFile != null && fotoFile.Length > 0)
+                {
+                    // Validate file type
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var fileExtension = Path.GetExtension(fotoFile.FileName).ToLowerInvariant();
+                    
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        return BadRequest(new { Remarks = false, Message = "Format file tidak didukung. Gunakan JPG, JPEG, PNG, atau GIF." });
+                    }
+
+                    // Validate file size (5MB max)
+                    if (fotoFile.Length > 5 * 1024 * 1024)
+                    {
+                        return BadRequest(new { Remarks = false, Message = "Ukuran file terlalu besar. Maksimal 5MB." });
+                    }
+
+                    // Create unique filename
+                    var fileName = $"asset_out_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid().ToString("N")[..8]}{fileExtension}";
+                    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                    
+                    // Ensure directory exists
+                    if (!Directory.Exists(uploadsPath))
+                    {
+                        Directory.CreateDirectory(uploadsPath);
+                    }
+
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    // Save file
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await fotoFile.CopyToAsync(stream);
+                    }
+
+                    // Store relative path
+                    fotoPath = $"/uploads/{fileName}";
+                }
+
                 var assetOut = new TblMAssetOut
                 {
                     NamaBarang = sourceAsset.NamaBarang,
@@ -42,7 +84,7 @@ namespace AssetTaking.Controllers.Api
                     KodeBarang = sourceAsset.KodeBarang,
                     KategoriBarang = sourceAsset.KategoriBarang,
                     Qty = request.Qty,
-                    Foto = request.Foto, // Allow custom foto for asset out
+                    Foto = fotoPath,
                     CreatedAt = DateTime.Now,
                     CreatedBy = "system"
                 };
@@ -56,7 +98,7 @@ namespace AssetTaking.Controllers.Api
                     KodeBarang = sourceAsset.KodeBarang,
                     KategoriBarang = sourceAsset.KategoriBarang,
                     Qty = request.Qty,
-                    Foto = request.Foto,
+                    Foto = fotoPath,
                     Status = (int)StatusAsset.Out, // Status 2 for Asset Out
                     CreatedAt = DateTime.Now,
                     CreatedBy = "system"

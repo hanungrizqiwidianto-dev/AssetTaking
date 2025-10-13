@@ -1,6 +1,49 @@
 ﻿$(document).ready(function() {
     console.log("AssetIn.js loaded");
 
+    // Image preview functionality
+    $('#fotoFile').on('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                Swal.fire({
+                    title: 'Format File Tidak Valid!',
+                    text: 'Silakan pilih file gambar dengan format JPG, JPEG, PNG, atau GIF.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                $(this).val('');
+                $('#imagePreview').hide();
+                return;
+            }
+
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({
+                    title: 'Ukuran File Terlalu Besar!',
+                    text: 'Ukuran file maksimal 5MB.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                $(this).val('');
+                $('#imagePreview').hide();
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#previewImg').attr('src', e.target.result);
+                $('#imagePreview').show();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#imagePreview').hide();
+        }
+    });
+
     // Validasi duplikasi untuk manual input
     async function validateDuplicate(nomorAsset, kodeBarang) {
         try {
@@ -80,22 +123,28 @@
             return;
         }
         
-        const formData = {
-            NamaBarang: $('#namaBarang').val(),
-            NomorAsset: nomorAsset,
-            KodeBarang: kodeBarang,
-            KategoriBarang: $('#kategoriBarang').val(),
-            Qty: parseInt($('#qty').val()),
-            Foto: $('#foto').val()
-        };
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('NamaBarang', $('#namaBarang').val());
+        formData.append('NomorAsset', nomorAsset);
+        formData.append('KodeBarang', kodeBarang);
+        formData.append('KategoriBarang', $('#kategoriBarang').val());
+        formData.append('Qty', parseInt($('#qty').val()));
+        
+        // Add file if selected
+        const fileInput = $('#fotoFile')[0];
+        if (fileInput.files.length > 0) {
+            formData.append('fotoFile', fileInput.files[0]);
+        }
 
-        console.log("Submitting asset in:", formData);
+        console.log("Submitting asset in with form data");
 
         $.ajax({
             url: '/api/AssetIn/Create',
             type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(formData),
+            data: formData,
+            processData: false,
+            contentType: false,
             success: function(response) {
                 console.log("Asset in response:", response);
                 if (response.remarks) {

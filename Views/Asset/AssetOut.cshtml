@@ -10,7 +10,7 @@
         </h3>
     </div>
     <div class="block-content block-content-full">
-        <form id="assetOutForm">
+        <form id="assetOutForm" enctype="multipart/form-data">
             <div class="row">
                 <div class="col-lg-6">
                     <div class="mb-4">
@@ -62,8 +62,24 @@
             <div class="row">
                 <div class="col-lg-6">
                     <div class="mb-4">
-                        <label class="form-label" for="foto">Foto</label>
-                        <input type="text" class="form-control" id="foto" name="foto" disabled>
+                        <label class="form-label" for="fotoFile">Upload Foto Baru (Opsional)</label>
+                        <input type="file" class="form-control" id="fotoFile" name="fotoFile" accept="image/*">
+                        <div class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Format yang didukung: JPG, JPEG, PNG, GIF (Max: 5MB)
+                        </div>
+                        <div id="imagePreview" class="mt-2" style="display:none;">
+                            <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="mb-4">
+                        <label class="form-label" for="foto">Foto Saat Ini</label>
+                        <input type="text" class="form-control" id="foto" name="foto" readonly disabled>
+                        <div id="currentImagePreview" class="mt-2" style="display:none;">
+                            <img id="currentImg" src="" alt="Current Photo" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+                        </div>
                     </div>
                 </div>
             </div>

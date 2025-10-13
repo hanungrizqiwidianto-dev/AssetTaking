@@ -1,6 +1,49 @@
 ﻿$(document).ready(function() {
     console.log("AssetOut.js loaded");
 
+    // Image preview functionality for new upload
+    $('#fotoFile').on('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            // Validate file type
+            const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            if (!allowedTypes.includes(file.type)) {
+                Swal.fire({
+                    title: 'Format File Tidak Valid!',
+                    text: 'Silakan pilih file gambar dengan format JPG, JPEG, PNG, atau GIF.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                $(this).val('');
+                $('#imagePreview').hide();
+                return;
+            }
+
+            // Validate file size (5MB)
+            if (file.size > 5 * 1024 * 1024) {
+                Swal.fire({
+                    title: 'Ukuran File Terlalu Besar!',
+                    text: 'Ukuran file maksimal 5MB.',
+                    icon: 'error',
+                    confirmButtonText: 'OK'
+                });
+                $(this).val('');
+                $('#imagePreview').hide();
+                return;
+            }
+
+            // Show preview
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                $('#previewImg').attr('src', e.target.result);
+                $('#imagePreview').show();
+            };
+            reader.readAsDataURL(file);
+        } else {
+            $('#imagePreview').hide();
+        }
+    });
+
     // Initialize Select2 with AJAX search
     initializeAssetSelect();
 
@@ -59,13 +102,18 @@
             return;
         }
 
-        const formData = {
-            AssetInId: parseInt(assetInId),
-            Qty: qty,
-            Foto: $('#foto').val()
-        };
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('AssetInId', parseInt(assetInId));
+        formData.append('Qty', qty);
+        
+        // Add file if selected
+        const fileInput = $('#fotoFile')[0];
+        if (fileInput.files.length > 0) {
+            formData.append('fotoFile', fileInput.files[0]);
+        }
 
-        console.log("Submitting asset out:", formData);
+        console.log("Submitting asset out with form data");
 
         // Disable submit button during submission
         $('#submitBtn').prop('disabled', true).text('Processing...');
@@ -73,8 +121,9 @@
         $.ajax({
             url: '/api/AssetOut/Create',
             type: 'POST',
-            contentType: 'application/json',
-            data: JSON.stringify(formData),
+            data: formData,
+            processData: false,
+            contentType: false,
             success: function(response) {
                 console.log("Asset out response:", response);
                 if (response.remarks || response.Remarks) {
@@ -200,6 +249,14 @@
             $('#foto').val(selectedData.foto || '');
             $('#stockInfo').text(selectedData.qty || 0);
             $('#qty').attr('max', selectedData.qty || 0);
+            
+            // Show current photo if exists
+            if (selectedData.foto && selectedData.foto !== '') {
+                $('#currentImg').attr('src', selectedData.foto);
+                $('#currentImagePreview').show();
+            } else {
+                $('#currentImagePreview').hide();
+            }
         }
     }
 
@@ -218,6 +275,14 @@
                     $('#foto').val(asset.foto || '');
                     $('#stockInfo').text(asset.qty || 0);
                     $('#qty').attr('max', asset.qty || 0);
+                    
+                    // Show current photo if exists
+                    if (asset.foto && asset.foto !== '') {
+                        $('#currentImg').attr('src', asset.foto);
+                        $('#currentImagePreview').show();
+                    } else {
+                        $('#currentImagePreview').hide();
+                    }
                 } else {
                     Swal.fire({
                         title: 'Error!',
@@ -267,6 +332,9 @@
         $('#foto').val('');
         $('#qty').val('').removeAttr('max');
         $('#stockInfo').text('-');
+        $('#fotoFile').val('');
+        $('#imagePreview').hide();
+        $('#currentImagePreview').hide();
     }
 
     // Initialize form state
