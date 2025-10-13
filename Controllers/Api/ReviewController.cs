@@ -88,6 +88,65 @@ namespace AssetTaking.Controllers.Api
             }
         }
 
+        [HttpGet("GetAssetDetailsPaginated")]
+        public IActionResult GetAssetDetailsPaginated([FromQuery] string kodeBarang, [FromQuery] string nomorAsset, [FromQuery] int page = 1, [FromQuery] int pageSize = 6)
+        {
+            try
+            {
+                var query = _context.TblTAssets
+                    .Where(a => a.KodeBarang == kodeBarang && a.NomorAsset == nomorAsset)
+                    .Select(a => new
+                    {
+                        a.Id,
+                        a.NamaBarang,
+                        a.TanggalMasuk,
+                        a.NomorAsset,
+                        a.KodeBarang,
+                        a.KategoriBarang,
+                        a.Qty,
+                        a.Foto,
+                        a.Status,
+                        StatusText = a.Status == 1 ? "Asset In" : a.Status == 2 ? "Asset Out" : "Unknown",
+                        a.CreatedAt,
+                        a.CreatedBy,
+                        a.ModifiedAt,
+                        a.ModifiedBy
+                    });
+
+                var totalRecords = query.Count();
+                var totalPages = (int)Math.Ceiling((double)totalRecords / pageSize);
+
+                var assetDetails = query
+                    .OrderBy(a => a.Id)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+
+                if (!assetDetails.Any() && totalRecords == 0)
+                {
+                    return NotFound(new { message = "Asset not found" });
+                }
+
+                return Ok(new
+                {
+                    data = assetDetails,
+                    pagination = new
+                    {
+                        currentPage = page,
+                        pageSize = pageSize,
+                        totalRecords = totalRecords,
+                        totalPages = totalPages,
+                        hasNextPage = page < totalPages,
+                        hasPreviousPage = page > 1
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error retrieving asset details", error = ex.Message });
+            }
+        }
+
         [HttpPut("UpdateAsset/{id}")]
         public IActionResult UpdateAsset(int id, [FromBody] UpdateAssetFromReviewRequest request)
         {
@@ -133,8 +192,8 @@ namespace AssetTaking.Controllers.Api
                         });
                     }
                     
-                    // Update qty di TblMAssetIn
-                    var assetIn = _context.TblMAssetIns
+                    // Update qty di TblTAssetIn
+                    var assetIn = _context.TblTAssetIns
                         .FirstOrDefault(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
                     
                     if (assetIn != null)
@@ -150,7 +209,7 @@ namespace AssetTaking.Controllers.Api
                 else if (isAssetOut)
                 {
                     // Edit Asset Out: Validasi tidak boleh melebihi Asset In
-                    var assetIn = _context.TblMAssetIns
+                    var assetIn = _context.TblTAssetIns
                         .FirstOrDefault(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
                     
                     if (assetIn != null)
@@ -177,8 +236,8 @@ namespace AssetTaking.Controllers.Api
                             });
                         }
 
-                        // Update TblMAssetOut dengan quantity baru (bukan difference)
-                        var assetOut = _context.TblMAssetOuts
+                        // Update TblTAssetOut dengan quantity baru (bukan difference)
+                        var assetOut = _context.TblTAssetOuts
                             .FirstOrDefault(ao => ao.NomorAsset == asset.NomorAsset && ao.KodeBarang == asset.KodeBarang && ao.Qty == oldQty);
                         
                         if (assetOut != null)
@@ -250,8 +309,8 @@ namespace AssetTaking.Controllers.Api
 
                 if (isAssetIn)
                 {
-                    // Delete Asset In: Kurangi quantity di TblMAssetIn (atau set ke 0)
-                    var assetIn = _context.TblMAssetIns
+                    // Delete Asset In: Kurangi quantity di TblTAssetIn (atau set ke 0)
+                    var assetIn = _context.TblTAssetIns
                         .FirstOrDefault(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
                     
                     if (assetIn != null)
@@ -276,17 +335,17 @@ namespace AssetTaking.Controllers.Api
                 }
                 else if (isAssetOut)
                 {
-                    // Delete Asset Out: Kurangi quantity di TblMAssetOut saja (tidak perlu update asset in)
-                    var assetOut = _context.TblMAssetOuts
+                    // Delete Asset Out: Kurangi quantity di TblTAssetOut saja (tidak perlu update asset in)
+                    var assetOut = _context.TblTAssetOuts
                         .FirstOrDefault(ao => ao.NomorAsset == asset.NomorAsset && ao.KodeBarang == asset.KodeBarang && ao.Qty == asset.Qty);
                     
-                    var assetIn = _context.TblMAssetIns
+                    var assetIn = _context.TblTAssetIns
                         .FirstOrDefault(ao => ao.NomorAsset == asset.NomorAsset && ao.KodeBarang == asset.KodeBarang);
 
                     if (assetOut != null)
                     {
                         // Kurangi quantity di asset out
-                        _context.TblMAssetOuts.Remove(assetOut);
+                        _context.TblTAssetOuts.Remove(assetOut);
                     }
                     if (assetIn != null)
                     {
@@ -330,11 +389,11 @@ namespace AssetTaking.Controllers.Api
                     .Where(a => a.KodeBarang == kodeBarang && a.NomorAsset == nomorAsset)
                     .ToList();
 
-                var assetInToDelete = _context.TblMAssetIns
+                var assetInToDelete = _context.TblTAssetIns
                     .Where(ai => ai.KodeBarang == kodeBarang && ai.NomorAsset == nomorAsset)
                     .ToList();
 
-                var assetOutToDelete = _context.TblMAssetOuts
+                var assetOutToDelete = _context.TblTAssetOuts
                     .Where(ao => ao.KodeBarang == kodeBarang && ao.NomorAsset == nomorAsset)
                     .ToList();
 
@@ -350,16 +409,16 @@ namespace AssetTaking.Controllers.Api
                     _context.TblTAssets.RemoveRange(assetsToDelete);
                 }
 
-                // 2. Delete TblMAssetIn
+                // 2. Delete TblTAssetIn
                 if (assetInToDelete.Any())
                 {
-                    _context.TblMAssetIns.RemoveRange(assetInToDelete);
+                    _context.TblTAssetIns.RemoveRange(assetInToDelete);
                 }
 
-                // 3. Delete TblMAssetOut
+                // 3. Delete TblTAssetOut
                 if (assetOutToDelete.Any())
                 {
-                    _context.TblMAssetOuts.RemoveRange(assetOutToDelete);
+                    _context.TblTAssetOuts.RemoveRange(assetOutToDelete);
                 }
 
                 _context.SaveChanges();

@@ -360,8 +360,8 @@ function initializeMonthlyTrendChart() {
             
             for (var i = 0; i < data.length; i++) {
                 labels.push(data[i].monthName);
-                assetInData.push(data[i].assetIn);
-                assetOutData.push(data[i].assetOut);
+                assetInData.push(data[i].assetIn || data[i].AssetIn || 0);
+                assetOutData.push(data[i].assetOut || data[i].AssetOut || 0);
             }
             
             monthlyTrendChart = new Chart(ctx.getContext('2d'), {
@@ -471,39 +471,14 @@ function initializeStatusChart() {
 }
 
 function updateMonthlyTrendChart() {
-    if (!monthlyTrendChart) {
-        initializeMonthlyTrendChart();
-        return;
+    // Destroy existing chart if it exists
+    if (monthlyTrendChart) {
+        monthlyTrendChart.destroy();
+        monthlyTrendChart = null;
     }
     
-    const params = getDateFilterParams();
-    const url = '/api/Dashboard/GetMonthlyTrend' + (params ? '?' + params : '');
-    
-    $.ajax({
-        url: url,
-        type: 'GET',
-        success: function (data) {
-            console.log('Monthly trend data updated:', data);
-            
-            var labels = [];
-            var assetInData = [];
-            var assetOutData = [];
-            
-            for (var i = 0; i < data.length; i++) {
-                labels.push(data[i].monthName);
-                assetInData.push(data[i].assetIn);
-                assetOutData.push(data[i].assetOut);
-            }
-            
-            monthlyTrendChart.data.labels = labels;
-            monthlyTrendChart.data.datasets[0].data = assetInData;
-            monthlyTrendChart.data.datasets[1].data = assetOutData;
-            monthlyTrendChart.update();
-        },
-        error: function (xhr, status, error) {
-            console.error('Error updating monthly trend data:', error);
-        }
-    });
+    // Recreate the chart with new data
+    initializeMonthlyTrendChart();
 }
 
 function updateStatusChart() {

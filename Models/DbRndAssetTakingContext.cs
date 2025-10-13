@@ -15,9 +15,9 @@ public partial class DbRndAssetTakingContext : DbContext
 
     public virtual DbSet<TblMAssetCategory> TblMAssetCategories { get; set; }
 
-    public virtual DbSet<TblMAssetIn> TblMAssetIns { get; set; }
+    public virtual DbSet<TblTAssetIn> TblTAssetIns { get; set; }
 
-    public virtual DbSet<TblMAssetOut> TblMAssetOuts { get; set; }
+    public virtual DbSet<TblTAssetOut> TblTAssetOuts { get; set; }
 
     public virtual DbSet<TblMRole> TblMRoles { get; set; }
 

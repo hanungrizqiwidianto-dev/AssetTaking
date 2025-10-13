@@ -24,7 +24,7 @@ namespace AssetTaking.Controllers.Api
                 var now = DateTime.Now;
 
                 // Get Asset In data from last 7 days
-                var assetInData = await _context.TblMAssetIns
+                var assetInData = await _context.TblTAssetIns
                     .Where(x => x.CreatedAt.HasValue && x.CreatedAt.Value >= sevenDaysAgo && x.CreatedAt.Value <= now)
                     .OrderByDescending(x => x.CreatedAt)
                     .Select(x => new
@@ -42,7 +42,7 @@ namespace AssetTaking.Controllers.Api
                     .ToListAsync();
 
                 // Get Asset Out data from last 7 days
-                var assetOutData = await _context.TblMAssetOuts
+                var assetOutData = await _context.TblTAssetOuts
                     .Where(x => x.CreatedAt.HasValue && x.CreatedAt.Value >= sevenDaysAgo && x.CreatedAt.Value <= now)
                     .OrderByDescending(x => x.CreatedAt)
                     .Select(x => new
@@ -94,10 +94,10 @@ namespace AssetTaking.Controllers.Api
                 var sevenDaysAgo = DateTime.Now.AddDays(-7);
                 var now = DateTime.Now;
 
-                var assetInCount = await _context.TblMAssetIns
+                var assetInCount = await _context.TblTAssetIns
                     .CountAsync(x => x.CreatedAt.HasValue && x.CreatedAt.Value >= sevenDaysAgo && x.CreatedAt.Value <= now);
 
-                var assetOutCount = await _context.TblMAssetOuts
+                var assetOutCount = await _context.TblTAssetOuts
                     .CountAsync(x => x.CreatedAt.HasValue && x.CreatedAt.Value >= sevenDaysAgo && x.CreatedAt.Value <= now);
 
                 var totalCount = assetInCount + assetOutCount;

@@ -21,6 +21,112 @@ body {
   margin-bottom: 60px;
 }
 
+/* Asset Detail Modal Styles */
+.modal-view-toggle .btn {
+    transition: all 0.3s ease;
+}
+
+.modal-view-toggle .btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Modal Card View Styles */
+#modalCardView .block {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    border: 1px solid #e3e7f1;
+    margin-bottom: 1rem;
+}
+
+#modalCardView .block:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+#modalCardView .block-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+/* Modal List View Styles */
+#modalListView .table {
+    font-size: 0.9rem;
+}
+
+#modalListView .table th {
+    background-color: #f8f9fc;
+    font-weight: 600;
+    border-bottom: 2px solid #e3e6f0;
+}
+
+#modalListView .img-thumbnail {
+    border-radius: 0.5rem;
+}
+
+/* Modal Pagination Styles */
+#modalPaginationNav .page-link {
+    border-radius: 0.375rem;
+    margin: 0 2px;
+    border: 1px solid #d1d3e2;
+    color: #5a5c69;
+}
+
+#modalPaginationNav .page-link:hover {
+    background-color: #eaecf4;
+    border-color: #d1d3e2;
+}
+
+#modalPaginationNav .page-item.active .page-link {
+    background-color: #5a5c69;
+    border-color: #5a5c69;
+}
+
+#modalPaginationNav .page-item.disabled .page-link {
+    color: #858796;
+}
+
+/* Modal responsive adjustments */
+@media (max-width: 768px) {
+    #modalCardView .col-md-6 {
+        margin-bottom: 1rem;
+    }
+    
+    .modal-view-toggle {
+        margin-bottom: 1rem;
+    }
+    
+    #modalPaginationNav {
+        justify-content: center;
+    }
+    
+    #modalPaginationInfo {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    #modalListView .table {
+        font-size: 0.8rem;
+    }
+    
+    #modalListView .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* Loading states for modal */
+.modal-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 200px;
+}
+
+.modal-loading .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
 /* Notification Styles */
 .notification-dropdown {
     border: 1px solid #e3e6f0;

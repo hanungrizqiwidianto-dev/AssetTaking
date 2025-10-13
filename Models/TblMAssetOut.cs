@@ -6,8 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AssetTaking.Models;
 
-[Table("TBL_M_ASSET_OUT")]
-public partial class TblMAssetOut
+[Table("TBL_T_ASSET_OUT")]
+public partial class TblTAssetOut
 {
     [Key]
     [Column("id")]

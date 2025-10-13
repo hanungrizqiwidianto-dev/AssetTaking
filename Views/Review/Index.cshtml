@@ -36,14 +36,76 @@
                 <div class="block-header block-header-default">
                     <h3 class="block-title">Asset Details</h3>
                     <div class="block-options">
+                        <div class="btn-group me-3" role="group" aria-label="View Toggle">
+                            <button type="button" class="btn btn-sm btn-primary" id="modalCardViewBtn" title="Card View">
+                                <i class="fa fa-th-large"></i> Card
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="modalListViewBtn" title="List View">
+                                <i class="fa fa-list"></i> List
+                            </button>
+                        </div>
                         <button type="button" class="btn-block-option" data-bs-dismiss="modal" aria-label="Close">
                             <i class="fa fa-times"></i>
                         </button>
                     </div>
                 </div>
                 <div class="block-content">
-                    <div id="assetDetailsContainer">
-                        <!-- Asset details will be loaded here -->
+                    <!-- Pagination Info and Size Selector -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p class="text-muted mb-0" id="modalPaginationInfo">Loading...</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <select class="form-select" id="modalPageSizeSelect" style="width: auto; display: inline-block;">
+                                <option value="6">6 per page</option>
+                                <option value="12">12 per page</option>
+                                <option value="18">18 per page</option>
+                                <option value="24">24 per page</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Card View Container -->
+                    <div id="modalCardView">
+                        <div class="row" id="assetDetailsContainer">
+                            <!-- Asset details will be loaded here -->
+                        </div>
+                    </div>
+                    
+                    <!-- List View Container -->
+                    <div id="modalListView" style="display: none;">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped table-vcenter" id="assetDetailsTable">
+                                <thead class="text-center bg-light">
+                                    <tr>
+                                        <th>Asset #</th>
+                                        <th>Status</th>
+                                        <th>Foto</th>
+                                        <th>Nama Barang</th>
+                                        <th>Kode</th>
+                                        <th>Nomor Asset</th>
+                                        <th>Kategori</th>
+                                        <th>Qty</th>
+                                        <th>Tanggal Masuk</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Table rows will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Pagination -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <nav aria-label="Asset details pagination">
+                                <ul class="pagination justify-content-center" id="modalPaginationNav">
+                                    <!-- Pagination buttons will be generated here -->
+                                </ul>
+                            </nav>
+                        </div>
                     </div>
                 </div>
                 <div class="block-content block-content-full block-content-sm text-end border-top">
@@ -57,4 +119,5 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="~/js/ReviewAssets.js"></script>
+    <script src="~/js/ReviewAssetsModal.js"></script>
 }

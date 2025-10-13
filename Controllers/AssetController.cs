@@ -201,7 +201,7 @@ namespace AssetTaking.Controllers
                             duplicateCheck.Add(uniqueKey);
 
                             // Validasi duplikasi dengan database
-                            var existingAsset = await _context.TblMAssetIns
+                            var existingAsset = await _context.TblTAssetIns
                                 .Where(x => x.KodeBarang == kodeBarang && x.NomorAsset == nomorAsset)
                                 .FirstOrDefaultAsync();
 
@@ -212,7 +212,7 @@ namespace AssetTaking.Controllers
                             }
 
                             // Jika validasi lolos, simpan ke database
-                            var assetIn = new TblMAssetIn
+                            var assetIn = new TblTAssetIn
                             {
                                 NamaBarang = namaBarang,
                                 NomorAsset = nomorAsset,
@@ -237,7 +237,7 @@ namespace AssetTaking.Controllers
                                 CreatedBy = currentUser
                             };
 
-                            _context.TblMAssetIns.Add(assetIn);
+                            _context.TblTAssetIns.Add(assetIn);
                             _context.TblTAssets.Add(asset);
                             successCount++;
                         }

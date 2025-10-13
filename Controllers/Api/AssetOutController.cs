@@ -22,7 +22,7 @@ namespace AssetTaking.Controllers.Api
             {
                 using var transaction = _context.Database.BeginTransaction();
 
-                var sourceAsset = _context.TblMAssetIns
+                var sourceAsset = _context.TblTAssetIns
                     .FirstOrDefault(a => a.Id == request.AssetInId);
 
                 if (sourceAsset == null)
@@ -77,7 +77,7 @@ namespace AssetTaking.Controllers.Api
                     fotoPath = $"/uploads/{fileName}";
                 }
 
-                var assetOut = new TblMAssetOut
+                var assetOut = new TblTAssetOut
                 {
                     NamaBarang = sourceAsset.NamaBarang,
                     NomorAsset = sourceAsset.NomorAsset,
@@ -88,7 +88,7 @@ namespace AssetTaking.Controllers.Api
                     CreatedAt = DateTime.Now,
                     CreatedBy = "system"
                 };
-                _context.TblMAssetOuts.Add(assetOut);
+                _context.TblTAssetOuts.Add(assetOut);
 
                 var asset = new TblTAsset
                 {
@@ -105,7 +105,7 @@ namespace AssetTaking.Controllers.Api
                 };
                 _context.TblTAssets.Add(asset);
 
-                // Update qty di TblMAssetIn
+                // Update qty di TblTAssetIn
                 sourceAsset.Qty -= request.Qty;
                 sourceAsset.ModifiedAt = DateTime.Now;
                 sourceAsset.ModifiedBy = "system";
@@ -151,7 +151,7 @@ namespace AssetTaking.Controllers.Api
         {
             try
             {
-                var assets = _context.TblMAssetIns
+                var assets = _context.TblTAssetIns
                     .Where(a => !string.IsNullOrEmpty(a.NomorAsset) && !string.IsNullOrEmpty(a.NamaBarang) && a.Qty > 0)
                     .Select(a => new {
                         a.Id,
@@ -179,7 +179,7 @@ namespace AssetTaking.Controllers.Api
         {
             try
             {
-                var query = _context.TblMAssetIns
+                var query = _context.TblTAssetIns
                     .Where(a => !string.IsNullOrEmpty(a.NomorAsset) && !string.IsNullOrEmpty(a.NamaBarang) && a.Qty > 0);
 
                 if (!string.IsNullOrEmpty(term))
@@ -228,7 +228,7 @@ namespace AssetTaking.Controllers.Api
         {
             try
             {
-                var asset = _context.TblMAssetIns
+                var asset = _context.TblTAssetIns
                     .Where(a => a.Id == id)
                     .Select(a => new {
                         a.Id,

@@ -20,7 +20,7 @@ namespace AssetTaking.Controllers.Api
         {
             try
             {
-                var query = _context.TblMAssetIns.AsQueryable();
+                var query = _context.TblTAssetIns.AsQueryable();
 
                 // Apply date filter
                 if (startDate.HasValue)
@@ -61,7 +61,7 @@ namespace AssetTaking.Controllers.Api
         {
             try
             {
-                var query = _context.TblMAssetOuts.AsQueryable();
+                var query = _context.TblTAssetOuts.AsQueryable();
 
                 // Apply date filter
                 if (startDate.HasValue)

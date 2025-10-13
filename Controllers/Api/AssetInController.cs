@@ -111,7 +111,7 @@ namespace AssetTaking.Controllers.Api
                     fotoPath = $"/uploads/{fileName}";
                 }
 
-                var assetIn = new TblMAssetIn
+                var assetIn = new TblTAssetIn
                 {
                     NamaBarang = request.NamaBarang,
                     NomorAsset = request.NomorAsset,
@@ -123,7 +123,7 @@ namespace AssetTaking.Controllers.Api
                     CreatedBy = "system"
                 };
 
-                _context.TblMAssetIns.Add(assetIn);
+                _context.TblTAssetIns.Add(assetIn);
                 _context.SaveChanges();
 
                 var asset = new TblTAsset
@@ -248,7 +248,7 @@ namespace AssetTaking.Controllers.Api
 
                 using var transaction = _context.Database.BeginTransaction();
 
-                var assetIn = new TblMAssetIn
+                var assetIn = new TblTAssetIn
                 {
                     NamaBarang = request.NamaBarang,
                     NomorAsset = request.NomorAsset,
@@ -260,7 +260,7 @@ namespace AssetTaking.Controllers.Api
                     CreatedBy = "Scanner User" // Could be updated to use session user
                 };
 
-                _context.TblMAssetIns.Add(assetIn);
+                _context.TblTAssetIns.Add(assetIn);
                 _context.SaveChanges();
 
                 var asset = new TblTAsset
