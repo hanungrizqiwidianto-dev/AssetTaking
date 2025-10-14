@@ -44,8 +44,8 @@
         }
     });
 
-    // Validasi duplikasi untuk manual input
-    async function validateDuplicate(nomorAsset, kodeBarang) {
+    // Check if asset exists for quantity increment information
+    async function checkAssetExists(nomorAsset, kodeBarang) {
         try {
             const response = await fetch('/api/AssetIn/CheckDuplicate', {
                 method: 'POST',
@@ -61,45 +61,103 @@
             const result = await response.json();
             return result;
         } catch (error) {
-            console.error('Error validating duplicate:', error);
+            console.error('Error checking asset:', error);
             return { isDuplicate: false, message: 'Error validasi' };
         }
     }
 
-    // Validasi real-time untuk nomor asset
-    $('#nomorAsset').on('blur', async function() {
-        const nomorAsset = $(this).val().trim();
-        if (nomorAsset) {
-            const validation = await validateDuplicate(nomorAsset, '');
-            if (validation.isDuplicate) {
+    // Generate item code based on category
+    async function generateItemCode(kategoriBarang) {
+        try {
+            const response = await fetch('/api/AssetIn/GenerateItemCode', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    KategoriBarang: kategoriBarang
+                })
+            });
+
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.error('Error generating item code:', error);
+            return { success: false, message: 'Error generate kode barang' };
+        }
+    }
+
+    // Reset manual form function
+    function resetManualForm() {
+        $('#assetInForm')[0].reset();
+        // Reset disabled fields properly
+        $('#kodeBarang').prop('disabled', false);
+        $('#kodeBarang').val('');
+        $('#kodeBarang').prop('disabled', true);
+        // Clear image preview
+        $('#imagePreview').hide();
+        // Remove validation classes
+        $('#nomorAsset, #kodeBarang').removeClass('is-invalid is-info');
+    }
+
+    // Auto-generate item code when category changes
+    $('#kategoriBarang').on('change', async function() {
+        const kategoriBarang = $(this).val().trim();
+        if (kategoriBarang) {
+            // Temporarily enable the field to set value
+            $('#kodeBarang').prop('disabled', false);
+            
+            const result = await generateItemCode(kategoriBarang);
+            if (result.success) {
+                $('#kodeBarang').val(result.itemCode);
+                
+                // Show info message
                 Swal.fire({
-                    title: 'Peringatan!',
-                    text: `${validation.duplicateType} "${nomorAsset}" sudah ada di database`,
-                    icon: 'warning',
-                    confirmButtonText: 'OK'
+                    title: 'Kode Barang Otomatis',
+                    text: `Kode barang "${result.itemCode}" telah digenerate berdasarkan kategori "${kategoriBarang}"`,
+                    icon: 'info',
+                    timer: 3000,
+                    showConfirmButton: false
                 });
-                $(this).addClass('is-invalid');
             } else {
-                $(this).removeClass('is-invalid');
+                $('#kodeBarang').val('');
             }
+            
+            // Disable the field again after setting value
+            $('#kodeBarang').prop('disabled', true);
+        } else {
+            // Clear kode barang if no category selected
+            $('#kodeBarang').prop('disabled', false);
+            $('#kodeBarang').val('');
+            $('#kodeBarang').prop('disabled', true);
         }
     });
 
-    // Validasi real-time untuk kode barang
-    $('#kodeBarang').on('blur', async function() {
-        const kodeBarang = $(this).val().trim();
-        if (kodeBarang) {
-            const validation = await validateDuplicate('', kodeBarang);
+    // Handle reset button click
+    $('#assetInForm button[type="reset"]').on('click', function(e) {
+        e.preventDefault();
+        resetManualForm();
+    });
+
+    // Show information when asset exists (instead of blocking)
+    $('#nomorAsset, #kodeBarang').on('blur', async function() {
+        const nomorAsset = $('#nomorAsset').val().trim();
+        const kodeBarang = $('#kodeBarang').val().trim();
+        
+        if (nomorAsset && kodeBarang) {
+            const validation = await checkAssetExists(nomorAsset, kodeBarang);
             if (validation.isDuplicate) {
+                // Show info instead of warning
                 Swal.fire({
-                    title: 'Peringatan!',
-                    text: `${validation.duplicateType} "${kodeBarang}" sudah ada di database`,
-                    icon: 'warning',
-                    confirmButtonText: 'OK'
+                    title: 'Informasi Asset',
+                    text: validation.message,
+                    icon: 'info',
+                    timer: 4000,
+                    showConfirmButton: false
                 });
-                $(this).addClass('is-invalid');
+                $(this).removeClass('is-invalid').addClass('is-info');
             } else {
-                $(this).removeClass('is-invalid');
+                $(this).removeClass('is-invalid is-info');
             }
         }
     });
@@ -111,16 +169,24 @@
         const nomorAsset = $('#nomorAsset').val().trim();
         const kodeBarang = $('#kodeBarang').val().trim();
         
-        // Validasi duplikasi sebelum submit
-        const validation = await validateDuplicate(nomorAsset, kodeBarang);
+        // Check if asset exists for information (no longer blocking)
+        const validation = await checkAssetExists(nomorAsset, kodeBarang);
         if (validation.isDuplicate) {
-            Swal.fire({
-                title: 'Data Sudah Ada!',
-                text: `${validation.duplicateType} sudah terdaftar di database. Silakan gunakan nomor/kode yang berbeda.`,
-                icon: 'error',
-                confirmButtonText: 'OK'
+            // Show confirmation dialog for existing asset
+            const result = await Swal.fire({
+                title: 'Asset Sudah Ada',
+                text: validation.message,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Tambahkan Qty',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d'
             });
-            return;
+            
+            if (!result.isConfirmed) {
+                return;
+            }
         }
         
         // Create FormData for file upload
@@ -154,9 +220,7 @@
                         icon: 'success',
                         confirmButtonText: 'OK'
                     }).then(function() {
-                        $('#assetInForm')[0].reset();
-                        // Hapus class invalid setelah reset
-                        $('#nomorAsset, #kodeBarang').removeClass('is-invalid');
+                        resetManualForm();
                         // Refresh notification after successful asset in
                         if (typeof refreshNotifications === 'function') {
                             refreshNotifications();
@@ -441,7 +505,7 @@
         $('#scan_qty').focus().select();
     }
 
-    // Validasi duplikasi untuk data yang di-scan
+    // Check scanned data for information (no longer blocking)
     async function validateScannedData() {
         const nomorAsset = $('#scan_nomorAsset').val().trim();
         const kodeBarang = $('#scan_kodeBarang').val().trim();
@@ -451,31 +515,28 @@
         $('#validationMessage').text('Memvalidasi data...');
         $('#submitScannedBtn').prop('disabled', true);
         
-        if (nomorAsset || kodeBarang) {
-            const validation = await validateDuplicate(nomorAsset, kodeBarang);
+        if (nomorAsset && kodeBarang) {
+            const validation = await checkAssetExists(nomorAsset, kodeBarang);
             if (validation.isDuplicate) {
-                // Show error state
-                $('#validationStatus').removeClass('alert-warning alert-success').addClass('alert-danger');
-                $('#validationMessage').text(`${validation.duplicateType} sudah terdaftar di database!`);
-                $('#submitScannedBtn').prop('disabled', true);
+                // Show info state instead of error
+                $('#validationStatus').removeClass('alert-warning alert-success').addClass('alert-info');
+                $('#validationMessage').text(`Asset sudah ada. Qty akan ditambahkan ke asset yang sudah ada.`);
+                $('#submitScannedBtn').prop('disabled', false);
                 
                 Swal.fire({
-                    title: 'Data Sudah Ada!',
-                    text: `${validation.duplicateType} "${nomorAsset || kodeBarang}" sudah terdaftar di database. Silakan scan QR/Barcode yang berbeda.`,
-                    icon: 'error',
-                    confirmButtonText: 'Scan Ulang'
-                }).then(() => {
-                    // Reset dan scan ulang
-                    resetScannerForm();
-                    startScanning();
+                    title: 'Asset Sudah Ada',
+                    text: validation.message,
+                    icon: 'info',
+                    timer: 3000,
+                    showConfirmButton: false
                 });
-                return true; // Return true jika ada duplikasi
+                return false; // No longer blocking
             } else {
                 // Show success state
-                $('#validationStatus').removeClass('alert-warning alert-danger').addClass('alert-success');
+                $('#validationStatus').removeClass('alert-warning alert-info').addClass('alert-success');
                 $('#validationMessage').text('Data valid, siap untuk disimpan!');
                 $('#submitScannedBtn').prop('disabled', false);
-                return false; // Return false jika tidak ada duplikasi
+                return false;
             }
         } else {
             // Hide validation status if no data to validate
@@ -504,16 +565,24 @@
         const nomorAsset = $('#scan_nomorAsset').val().trim();
         const kodeBarang = $('#scan_kodeBarang').val().trim();
         
-        // Validasi duplikasi final sebelum submit - BLOKIR SUBMIT JIKA ADA DUPLIKASI
-        const validation = await validateDuplicate(nomorAsset, kodeBarang);
+        // Check if asset exists for information (no longer blocking)
+        const validation = await checkAssetExists(nomorAsset, kodeBarang);
         if (validation.isDuplicate) {
-            Swal.fire({
-                title: 'Tidak Dapat Submit!',
-                text: `${validation.duplicateType} sudah ada di database. Data tidak dapat disimpan.`,
-                icon: 'error',
-                confirmButtonText: 'OK'
+            // Show confirmation dialog for existing asset
+            const result = await Swal.fire({
+                title: 'Asset Sudah Ada',
+                text: validation.message,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Ya, Tambahkan Qty',
+                cancelButtonText: 'Batal',
+                confirmButtonColor: '#28a745',
+                cancelButtonColor: '#6c757d'
             });
-            return; // Stop submit process
+            
+            if (!result.isConfirmed) {
+                return;
+            }
         }
         
         // Create FormData for file upload

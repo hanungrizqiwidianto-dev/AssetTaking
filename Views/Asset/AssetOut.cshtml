@@ -3,14 +3,33 @@
 }
 
 <h2 class="content-heading">Asset Out</h2>
+
+<!-- Navigation Tabs -->
 <div class="block block-rounded">
     <div class="block-header block-header-default">
         <h3 class="block-title">
             <small>Input Asset Out</small>
         </h3>
+        <div class="block-options">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" id="manual-tab" data-bs-toggle="tab" data-bs-target="#manual" type="button" role="tab">
+                        <i class="fa fa-edit me-1"></i>Manual Input
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" id="excel-tab" data-bs-toggle="tab" data-bs-target="#excel" type="button" role="tab">
+                        <i class="fa fa-file-excel me-1"></i>Import Excel
+                    </button>
+                </li>
+            </ul>
+        </div>
     </div>
     <div class="block-content block-content-full">
-        <form id="assetOutForm" enctype="multipart/form-data">
+        <div class="tab-content">
+            <!-- Manual Input Tab -->
+            <div class="tab-pane fade show active" id="manual" role="tabpanel">
+                <form id="assetOutForm" enctype="multipart/form-data">
             <div class="row">
                 <div class="col-lg-6">
                     <div class="mb-4">
@@ -84,15 +103,86 @@
                 </div>
             </div>
 
-            <div class="mb-4">
-                <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
-                    <i class="fa fa-save"></i> Submit Asset Out
-                </button>
-                <button type="reset" class="btn btn-secondary">
-                    <i class="fa fa-refresh"></i> Reset
-                </button>
+                    <div class="mb-4">
+                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
+                            <i class="fa fa-save"></i> Submit Asset Out
+                        </button>
+                        <button type="reset" class="btn btn-secondary">
+                            <i class="fa fa-refresh"></i> Reset
+                        </button>
+                    </div>
+                </form>
             </div>
-        </form>
+
+            <!-- Excel Import Tab -->
+            <div class="tab-pane fade" id="excel" role="tabpanel">
+                <div class="alert alert-info">
+                    <i class="fa fa-info-circle me-2"></i>
+                    <strong>Petunjuk Import Excel:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Download template Excel terlebih dahulu</li>
+                        <li>Isi data sesuai format template</li>
+                        <li>Pastikan Nomor Asset dan Kode Barang sesuai dengan data yang ada di sistem</li>
+                        <li>Qty yang diinput akan mengurangi stok yang tersedia</li>
+                        <li>Pastikan stok tersedia mencukupi untuk quantity yang diinput</li>
+                    </ul>
+                </div>
+
+                <div class="row">
+                    <div class="col-lg-6">
+                        <div class="mb-4">
+                            <label class="form-label">Download Template Excel</label>
+                            <div>
+                                <a href="@Url.Action("DownloadTemplateAssetOut", "Asset")" class="btn btn-success">
+                                    <i class="fa fa-download me-1"></i> Download Template Asset Out
+                                </a>
+                            </div>
+                            <small class="form-text text-muted">Download template untuk format import Excel</small>
+                        </div>
+                    </div>
+                </div>
+
+                <form id="excelUploadForm" enctype="multipart/form-data" action="@Url.Action("UploadExcelAssetOut", "Asset")" method="post">
+                    <div class="row">
+                        <div class="col-lg-8">
+                            <div class="mb-4">
+                                <label class="form-label" for="excelFile">Pilih File Excel</label>
+                                <input type="file" class="form-control" id="excelFile" name="file" accept=".xlsx,.xls" required>
+                                <div class="form-text text-muted">
+                                    Format file yang didukung: .xlsx, .xls (Maksimal ukuran file: 10MB)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="mb-4">
+                                <label class="form-label">&nbsp;</label>
+                                <div>
+                                    <button type="submit" class="btn btn-primary" id="uploadExcelBtn">
+                                        <i class="fa fa-upload me-1"></i> Upload Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div id="uploadProgress" class="mb-4" style="display: none;">
+                        <div class="progress">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 100%">
+                                Memproses file Excel...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Results -->
+                    <div id="uploadResults" class="mb-4" style="display: none;">
+                        <div class="alert" id="uploadResultAlert">
+                            <div id="uploadResultMessage"></div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 

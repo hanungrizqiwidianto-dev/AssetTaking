@@ -1,0 +1,429 @@
+@{
+    ViewData["Title"] = "Generate QR Code & Label";
+}
+
+<h2 class="content-heading">Generate QR Code & Label</h2>
+
+<!-- Alert Messages -->
+@if (ViewBag.Success != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="fa fa-check-circle me-1"></i>
+        @ViewBag.Success
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="fa fa-times-circle me-1"></i>
+        @ViewBag.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row">
+    <!-- Form Input -->
+    <div class="col-lg-6">
+        <div class="block block-rounded">
+            <div class="block-header block-header-default">
+                <h3 class="block-title">
+                    <i class="fa fa-plus-circle me-1"></i>
+                    Input Data Barang
+                </h3>
+            </div>
+            <div class="block-content">
+                <form method="post" asp-action="GenerateQR">
+                    <div class="mb-4">
+                        <label class="form-label" for="namaBarang">Nama Barang <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="namaBarang" name="namaBarang" 
+                               value="@ViewBag.NamaBarang" placeholder="Masukkan nama barang" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label" for="nomorAsset">Nomor Asset</label>
+                        <input type="text" class="form-control" id="nomorAsset" name="nomorAsset" 
+                               value="@ViewBag.NomorAsset" placeholder="Masukkan nomor asset (opsional)">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label" for="kategoriBarang">Kategori Barang <span class="text-danger">*</span></label>
+                        <select class="form-control" id="kategoriBarang" name="kategoriBarang" required>
+                            <option value="">Pilih Kategori...</option>
+                            @if (ViewBag.KategoriBarang?.ToString() == "SPAREPART")
+                            {
+                                <option value="SPAREPART" selected="selected">Spare Part</option>
+                            }
+                            else
+                            {
+                                <option value="SPAREPART">Spare Part</option>
+                            }
+                            @if (ViewBag.KategoriBarang?.ToString() == "RnD")
+                            {
+                                <option value="RnD" selected="selected">RnD Assets</option>
+                            }
+                            else
+                            {
+                                <option value="RnD">RnD Assets</option>
+                            }
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label" for="kodeBarang">Kode Barang</label>
+                        <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" 
+                               value="@ViewBag.KodeBarang" readonly disabled>
+                        <div class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Kode barang akan otomatis diisi berdasarkan kategori yang dipilih
+                        </div>
+                    </div>
+                    
+                    <div class="block-content block-content-full text-end bg-body-light">
+                        <button type="button" class="btn btn-secondary me-1" onclick="window.location.href='@Url.Action("Index", "Asset")'">
+                            <i class="fa fa-times me-1"></i> Batal
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fa fa-qrcode me-1"></i> Generate QR Code
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- QR Code Result -->
+    <div class="col-lg-6">
+        @if (ViewBag.QRData != null)
+        {
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-qrcode me-1"></i>
+                        QR Code Result
+                    </h3>
+                </div>
+                <div class="block-content text-center">
+                    <div class="mb-3">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=@(System.Web.HttpUtility.UrlEncode(ViewBag.QRData?.ToString() ?? ""))" 
+                             alt="QR Code" class="img-fluid border" style="max-width: 300px;" />
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <div class="bg-light p-3 rounded">
+                                <h5 class="mb-2">Informasi Barang:</h5>
+                                <table class="table table-borderless mb-0">
+                                    <tr>
+                                        <td class="text-start"><strong>Nama Barang:</strong></td>
+                                        <td class="text-start">@ViewBag.NamaBarang</td>
+                                    </tr>
+                                    @if (!string.IsNullOrEmpty(ViewBag.NomorAsset))
+                                    {
+                                        <tr>
+                                            <td class="text-start"><strong>Nomor Asset:</strong></td>
+                                            <td class="text-start">@ViewBag.NomorAsset</td>
+                                        </tr>
+                                    }
+                                    @if (!string.IsNullOrEmpty(ViewBag.KategoriBarang))
+                                    {
+                                        <tr>
+                                            <td class="text-start"><strong>Kategori Barang:</strong></td>
+                                            <td class="text-start">@ViewBag.KategoriBarang</td>
+                                        </tr>
+                                    }
+                                    @if (!string.IsNullOrEmpty(ViewBag.KodeBarang))
+                                    {
+                                        <tr>
+                                            <td class="text-start"><strong>Kode Barang:</strong></td>
+                                            <td class="text-start">@ViewBag.KodeBarang</td>
+                                        </tr>
+                                    }
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex flex-column flex-md-row gap-3 mt-4 mb-4 justify-content-center">
+                        <a href="@Url.Action("PrintLabel", "Asset", new { 
+                            namaBarang = ViewBag.NamaBarang, 
+                            nomorAsset = ViewBag.NomorAsset, 
+                            kategoriBarang = ViewBag.KategoriBarang, 
+                            kodeBarang = ViewBag.KodeBarang,
+                            qrData = ViewBag.QRData 
+                        })" class="btn btn-success btn-lg px-4 py-2" target="_blank">
+                            <i class="fa fa-print me-2"></i> Print Label
+                        </a>
+                        <button type="button" class="btn btn-primary btn-lg px-4 py-2" onclick="downloadLabel()">
+                            <i class="fa fa-download me-2"></i> Download Label
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="block block-rounded">
+                <div class="block-header block-header-default">
+                    <h3 class="block-title">
+                        <i class="fa fa-info-circle me-1"></i>
+                        Petunjuk
+                    </h3>
+                </div>
+                <div class="block-content">
+                    <div class="alert alert-info">
+                        <h5><i class="fa fa-info-circle me-1"></i> Cara Menggunakan:</h5>
+                        <ol class="mb-0">
+                            <li>Isi form di sebelah kiri dengan data barang</li>
+                            <li>Nama barang wajib diisi, field lain opsional</li>
+                            <li>Klik tombol "Generate QR Code"</li>
+                            <li>QR Code akan muncul di area ini</li>
+                            <li>Anda bisa print label atau download QR Code</li>
+                            <li>Tempel label ke barang untuk tracking</li>
+                        </ol>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <h6><i class="fa fa-exclamation-triangle me-1"></i> Tips:</h6>
+                        <ul class="mb-0">
+                            <li>Gunakan nama barang yang jelas dan spesifik</li>
+                            <li>Nomor asset membantu identifikasi unik</li>
+                            <li>Lokasi memudahkan pencarian barang</li>
+                            <li>QR Code dapat di-scan menggunakan fitur scan yang tersedia</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- QR Code Library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- SweetAlert2 -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+// Auto-generate kode barang function
+async function generateItemCode(kategoriBarang) {
+    try {
+        const response = await fetch('/api/AssetIn/GenerateItemCode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                KategoriBarang: kategoriBarang
+            })
+        });
+
+        const result = await response.json();
+        return result;
+    } catch (error) {
+        console.error('Error generating item code:', error);
+        return { success: false, message: 'Error generate kode barang' };
+    }
+}
+
+// Auto-generate item code when category changes
+$(document).ready(function() {
+    $('#kategoriBarang').on('change', async function() {
+        const kategoriBarang = $(this).val().trim();
+        if (kategoriBarang) {
+            // Temporarily enable the field to set value
+            $('#kodeBarang').prop('disabled', false);
+            
+            const result = await generateItemCode(kategoriBarang);
+            if (result.success) {
+                $('#kodeBarang').val(result.itemCode);
+                
+                // Show info message
+                Swal.fire({
+                    title: 'Kode Barang Otomatis',
+                    text: `Kode barang "${result.itemCode}" telah digenerate berdasarkan kategori "${kategoriBarang}"`,
+                    icon: 'info',
+                    timer: 3000,
+                    showConfirmButton: false
+                });
+            } else {
+                $('#kodeBarang').val('');
+            }
+            
+            // Disable the field again after setting value
+            $('#kodeBarang').prop('disabled', true);
+        } else {
+            // Clear kode barang if no category selected
+            $('#kodeBarang').prop('disabled', false);
+            $('#kodeBarang').val('');
+            $('#kodeBarang').prop('disabled', true);
+        }
+    });
+    
+    // Handle form submission to ensure kode barang is sent
+    $('form').on('submit', function(e) {
+        // Enable kode barang field temporarily for form submission
+        $('#kodeBarang').prop('disabled', false);
+        
+        // Set kategori value if it's selected but not in ViewBag
+        var selectedKategori = $('#kategoriBarang').val();
+        if (selectedKategori && !$('#kategoriBarang').find('option[value="' + selectedKategori + '"][selected]').length) {
+            $('#kategoriBarang').find('option[value="' + selectedKategori + '"]').prop('selected', true);
+        }
+    });
+});
+</script>
+
+<script>
+// QR Code sudah ditampilkan menggunakan external API
+
+function downloadLabel() {
+    @if (ViewBag.QRData != null)
+    {
+        <text>
+        var qrData = '@Html.Raw(ViewBag.QRData)';
+        var namaBarang = '@ViewBag.NamaBarang';
+        var nomorAsset = '@ViewBag.NomorAsset';
+        var kodeBarang = '@ViewBag.KodeBarang';
+        var kategoriBarang = '@ViewBag.KategoriBarang';
+        var timestamp = '@DateTime.Now.ToString("yyyyMMdd_HHmmss")';
+        
+        // Create canvas for label
+        var labelCanvas = document.createElement('canvas');
+        var ctx = labelCanvas.getContext('2d');
+        
+        // Set canvas dimensions
+        labelCanvas.width = 450;
+        labelCanvas.height = 250;
+        
+        // Background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+        
+        // Border
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(0, 0, labelCanvas.width, labelCanvas.height);
+        
+        // Header background
+        ctx.fillStyle = '#f8f9fa';
+        ctx.fillRect(2, 2, labelCanvas.width - 4, 40);
+        
+        // Header border
+        ctx.strokeStyle = '#333333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(2, 42);
+        ctx.lineTo(labelCanvas.width - 2, 42);
+        ctx.stroke();
+        
+        // Header text
+        ctx.fillStyle = '#333333';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('ASSET MANAGEMENT', labelCanvas.width/2, 20);
+        
+        ctx.font = '12px Arial';
+        ctx.fillText('Asset Tracking Label', labelCanvas.width/2, 35);
+        
+        // Load QR code image from external API
+        var qrImg = new Image();
+        qrImg.crossOrigin = 'anonymous';
+        qrImg.onload = function() {
+            // Draw QR code on the left side
+            ctx.drawImage(qrImg, 15, 55, 120, 120);
+            
+            // Draw asset information on the right side
+            ctx.fillStyle = '#333333';
+            ctx.textAlign = 'left';
+            var startX = 150;
+            var startY = 65;
+            var lineHeight = 20;
+            var currentY = startY;
+            
+            // Nama Barang (always show)
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('Nama Barang:', startX, currentY);
+            ctx.font = '10px Arial';
+            var namaText = namaBarang.length > 22 ? namaBarang.substring(0, 22) + '...' : namaBarang;
+            ctx.fillText(namaText, startX + 80, currentY);
+            currentY += lineHeight;
+            
+            // Nomor Asset (if exists)
+            if (nomorAsset && nomorAsset.trim() !== '') {
+                ctx.font = 'bold 11px Arial';
+                ctx.fillText('Nomor Asset:', startX, currentY);
+                ctx.font = '10px Arial';
+                ctx.fillText(nomorAsset, startX + 80, currentY);
+                currentY += lineHeight;
+            }
+            
+            // Kategori (if exists)
+            if (kategoriBarang && kategoriBarang.trim() !== '') {
+                ctx.font = 'bold 11px Arial';
+                ctx.fillText('Kategori:', startX, currentY);
+                ctx.font = '10px Arial';
+                ctx.fillText(kategoriBarang, startX + 80, currentY);
+                currentY += lineHeight;
+            }
+            
+            // Kode Barang (if exists)
+            if (kodeBarang && kodeBarang.trim() !== '') {
+                ctx.font = 'bold 11px Arial';
+                ctx.fillText('Kode Barang:', startX, currentY);
+                ctx.font = '10px Arial';
+                ctx.fillText(kodeBarang, startX + 80, currentY);
+                currentY += lineHeight;
+            }
+            
+            // Generated timestamp di sebelah kanan atas
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#666666';
+            var now = new Date();
+            var dateStr = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' ' + 
+                         now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
+            ctx.fillText('Generated: ' + dateStr + ' | Scan', labelCanvas.width - 15, 65);
+            ctx.fillText('QR code untuk detail asset', labelCanvas.width - 15, 77);
+            
+            // Footer background
+            ctx.fillStyle = '#f8f9fa';
+            ctx.fillRect(2, labelCanvas.height - 30, labelCanvas.width - 4, 28);
+            
+            // Footer border
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(2, labelCanvas.height - 30);
+            ctx.lineTo(labelCanvas.width - 2, labelCanvas.height - 30);
+            ctx.stroke();
+            
+            // Footer text
+            ctx.fillStyle = '#666666';
+            ctx.font = '9px Arial';
+            ctx.textAlign = 'center';
+            var now = new Date();
+            var footerDateStr = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' ' + 
+                               now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
+            ctx.fillText('Generated: ' + footerDateStr + ' | Scan QR code untuk detail asset', labelCanvas.width/2, labelCanvas.height - 15);
+            
+            // Download
+            labelCanvas.toBlob(function(blob) {
+                var url = URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.href = url;
+                link.download = 'Label_' + namaBarang.replace(/[^a-zA-Z0-9]/g, '_') + '_' + timestamp + '.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            });
+        };
+        
+        // Set QR image source to external API
+        var encodedQRData = encodeURIComponent(qrData);
+        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodedQRData;
+        </text>
+    }
+}
+</script>

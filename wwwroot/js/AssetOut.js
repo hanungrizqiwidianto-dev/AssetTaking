@@ -339,4 +339,240 @@
 
     // Initialize form state
     disableForm();
+
+    // Excel Upload Functionality
+    $('#excelUploadForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        const fileInput = $('#excelFile')[0];
+        if (!fileInput.files.length) {
+            Swal.fire({
+                title: 'Peringatan!',
+                text: 'Silakan pilih file Excel terlebih dahulu',
+                icon: 'warning'
+            });
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const maxSize = 10 * 1024 * 1024; // 10MB
+        
+        if (file.size > maxSize) {
+            Swal.fire({
+                title: 'File Terlalu Besar!',
+                text: 'Ukuran file maksimal 10MB',
+                icon: 'error'
+            });
+            return;
+        }
+
+        // Validate file extension
+        const allowedExtensions = ['.xlsx', '.xls'];
+        const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+        
+        if (!allowedExtensions.includes(fileExtension)) {
+            Swal.fire({
+                title: 'Format File Tidak Valid!',
+                text: 'Hanya file Excel (.xlsx, .xls) yang diperbolehkan',
+                icon: 'error'
+            });
+            return;
+        }
+
+        // Show confirmation
+        Swal.fire({
+            title: 'Konfirmasi Upload Asset Out',
+            html: `
+                <div class="text-left">
+                    <p><strong>File:</strong> ${file.name}</p>
+                    <p><strong>Ukuran:</strong> ${(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p><strong>Format:</strong> ${fileExtension.toUpperCase()}</p>
+                </div>
+                <div class="alert alert-warning mt-3">
+                    <i class="fa fa-exclamation-triangle"></i> 
+                    <strong>Perhatian:</strong> Proses ini akan mengurangi stok asset sesuai dengan data di Excel.
+                </div>
+            `,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: '<i class="fa fa-upload"></i> Ya, Upload!',
+            cancelButtonText: '<i class="fa fa-times"></i> Batal',
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                uploadExcelFile();
+            }
+        });
+    });
+
+    function uploadExcelFile() {
+        const formData = new FormData($('#excelUploadForm')[0]);
+        
+        // Show progress
+        $('#uploadExcelBtn').prop('disabled', true);
+        $('#uploadProgress').show();
+
+        $.ajax({
+            url: $('#excelUploadForm').attr('action'),
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                // Hide progress
+                $('#uploadProgress').hide();
+                $('#uploadExcelBtn').prop('disabled', false);
+                
+                if (response.success) {
+                    // Show success or warning SweetAlert with statistics
+                    let icon = response.status; // 'success' or 'warning'
+                    let confirmButtonText = 'OK';
+                    let htmlContent = '';
+                    
+                    // Create detailed message with statistics
+                    if (response.successCount > 0) {
+                        htmlContent += `
+                            <div class="alert alert-success">
+                                <i class="fa fa-check-circle"></i> 
+                                <strong>Berhasil memproses ${response.successCount} data asset out</strong>
+                            </div>
+                        `;
+                    }
+                    
+                    if (response.errorCount > 0) {
+                        htmlContent += `
+                            <div class="alert alert-warning">
+                                <i class="fa fa-exclamation-triangle"></i> 
+                                <strong>Ditemukan ${response.errorCount} error</strong>
+                            </div>
+                        `;
+                        confirmButtonText = 'Lihat Detail';
+                    }
+                    
+                    // Add detailed message
+                    htmlContent += `<div class="text-left mt-2">${response.message.replace(/\n/g, '<br>')}</div>`;
+                    
+                    Swal.fire({
+                        title: response.title,
+                        html: htmlContent,
+                        icon: icon,
+                        confirmButtonText: confirmButtonText,
+                        confirmButtonColor: icon === 'success' ? '#28a745' : '#ffc107',
+                        width: '600px'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Reset form after successful upload
+                            $('#excelUploadForm')[0].reset();
+                            $('#excelFile').removeClass('is-invalid');
+                            $('#uploadResults').hide();
+                            
+                            // Show additional success message if all data imported successfully
+                            if (response.successCount > 0 && response.errorCount === 0) {
+                                Swal.fire({
+                                    title: 'Import Selesai!',
+                                    html: `
+                                        <div class="text-center">
+                                            <i class="fa fa-check-circle text-success" style="font-size: 48px;"></i>
+                                            <h4 class="mt-3">Semua data berhasil diproses!</h4>
+                                            <p>Asset out telah tersimpan dalam database dan stok telah dikurangi sesuai dengan data yang diimport.</p>
+                                        </div>
+                                    `,
+                                    icon: 'success',
+                                    timer: 3000,
+                                    showConfirmButton: false
+                                });
+                            }
+                        }
+                    });
+                } else {
+                    // Show error SweetAlert
+                    Swal.fire({
+                        title: response.title || 'Error!',
+                        html: response.message.replace(/\n/g, '<br>'),
+                        icon: 'error',
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#dc3545'
+                    });
+                }
+            },
+            error: function(xhr, status, error) {
+                // Hide progress
+                $('#uploadProgress').hide();
+                $('#uploadExcelBtn').prop('disabled', false);
+                
+                let errorMessage = 'Terjadi kesalahan saat mengupload file';
+                let title = 'Error!';
+                
+                if (xhr.responseText) {
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        title = errorResponse.title || title;
+                        errorMessage = errorResponse.message || errorMessage;
+                    } catch (e) {
+                        // Use default error message if JSON parsing fails
+                        if (xhr.status === 0) {
+                            errorMessage = 'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.';
+                        } else if (xhr.status === 413) {
+                            errorMessage = 'File terlalu besar untuk diupload.';
+                        } else if (xhr.status >= 500) {
+                            errorMessage = 'Terjadi kesalahan pada server.';
+                        }
+                    }
+                }
+                
+                Swal.fire({
+                    title: title,
+                    html: errorMessage.replace(/\n/g, '<br>'),
+                    icon: 'error',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#dc3545'
+                });
+            }
+        });
+    }
+
+    // File input change event for validation
+    $('#excelFile').on('change', function() {
+        const file = this.files[0];
+        if (file) {
+            const maxSize = 10 * 1024 * 1024; // 10MB
+            const allowedExtensions = ['.xlsx', '.xls'];
+            const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+            
+            let isValid = true;
+            let errorMessage = '';
+            
+            if (file.size > maxSize) {
+                isValid = false;
+                errorMessage = 'Ukuran file maksimal 10MB';
+            } else if (!allowedExtensions.includes(fileExtension)) {
+                isValid = false;
+                errorMessage = 'Format file harus .xlsx atau .xls';
+            }
+            
+            if (!isValid) {
+                $(this).addClass('is-invalid');
+                $(this).next('.form-text').text(errorMessage).addClass('text-danger');
+                $('#uploadExcelBtn').prop('disabled', true);
+            } else {
+                $(this).removeClass('is-invalid');
+                $(this).next('.form-text').text('Format file yang didukung: .xlsx, .xls (Maksimal ukuran file: 10MB)').removeClass('text-danger');
+                $('#uploadExcelBtn').prop('disabled', false);
+            }
+        }
+    });
+
+    // Tab switch event to reset Excel form
+    $('#excel-tab').on('shown.bs.tab', function () {
+        // Reset form when switching to Excel tab
+        $('#excelUploadForm')[0].reset();
+        $('#uploadResults').hide();
+        $('#uploadProgress').hide();
+        $('#uploadExcelBtn').prop('disabled', false);
+        $('#excelFile').removeClass('is-invalid');
+    });
 });

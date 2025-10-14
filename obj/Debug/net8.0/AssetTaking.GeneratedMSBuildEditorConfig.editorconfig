@@ -17,85 +17,85 @@ build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = AssetTaking
 build_property.RootNamespace = AssetTaking
-build_property.ProjectDir = d:\PamaApp\AssetTaking\
+build_property.ProjectDir = D:\PamaApp\AssetTaking\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = d:\PamaApp\AssetTaking
+build_property.MSBuildProjectDirectory = D:\PamaApp\AssetTaking
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 8.0
 build_property.EnableCodeStyleSeverity = 
 
-[d:/PamaApp/AssetTaking/Views/Asset/AssetIn.cshtml]
+[D:/PamaApp/AssetTaking/Views/Asset/AssetIn.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcQXNzZXRJbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Asset/AssetOut.cshtml]
+[D:/PamaApp/AssetTaking/Views/Asset/AssetOut.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcQXNzZXRPdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Asset/Detail.cshtml]
+[D:/PamaApp/AssetTaking/Views/Asset/Detail.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcRGV0YWlsLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Asset/Index.cshtml]
+[D:/PamaApp/AssetTaking/Views/Asset/GenerateQR.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcR2VuZXJhdGVRUi5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/PamaApp/AssetTaking/Views/Asset/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Home/Index.cshtml]
+[D:/PamaApp/AssetTaking/Views/Asset/PrintLabel.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcQXNzZXRcUHJpbnRMYWJlbC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/PamaApp/AssetTaking/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Home/Privacy.cshtml]
+[D:/PamaApp/AssetTaking/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Login/Index.cshtml]
+[D:/PamaApp/AssetTaking/Views/Login/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcTG9naW5cSW5kZXguY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Register/Edit.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVnaXN0ZXJcRWRpdC5jc2h0bWw=
-build_metadata.AdditionalFiles.CssScope = 
-
-[d:/PamaApp/AssetTaking/Views/Register/Index.cshtml]
-build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmVnaXN0ZXJcSW5kZXguY3NodG1s
-build_metadata.AdditionalFiles.CssScope = 
-
-[d:/PamaApp/AssetTaking/Views/Review/Index.cshtml]
+[D:/PamaApp/AssetTaking/Views/Review/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUmV2aWV3XEluZGV4LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Setting/Menu.cshtml]
+[D:/PamaApp/AssetTaking/Views/Setting/Menu.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2V0dGluZ1xNZW51LmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Setting/Users.cshtml]
+[D:/PamaApp/AssetTaking/Views/Setting/Users.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2V0dGluZ1xVc2Vycy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Shared/Components/Sidebarmenu/_Sidebar.cshtml]
+[D:/PamaApp/AssetTaking/Views/Shared/Components/Sidebarmenu/_Sidebar.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXENvbXBvbmVudHNcU2lkZWJhcm1lbnVcX1NpZGViYXIuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Shared/Error.cshtml]
+[D:/PamaApp/AssetTaking/Views/Shared/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXEVycm9yLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Shared/_ValidationScriptsPartial.cshtml]
+[D:/PamaApp/AssetTaking/Views/Shared/_ValidationScriptsPartial.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/_ViewImports.cshtml]
+[D:/PamaApp/AssetTaking/Views/_ViewImports.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdJbXBvcnRzLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/_ViewStart.cshtml]
+[D:/PamaApp/AssetTaking/Views/_ViewStart.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcX1ZpZXdTdGFydC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
-[d:/PamaApp/AssetTaking/Views/Shared/_Layout.cshtml]
+[D:/PamaApp/AssetTaking/Views/Shared/_Layout.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcU2hhcmVkXF9MYXlvdXQuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = b-o98t9guacz
