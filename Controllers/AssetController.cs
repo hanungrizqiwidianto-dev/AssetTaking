@@ -22,17 +22,33 @@ namespace AssetTaking.Controllers
             return View();
         }
 
-        public IActionResult AssetIn()
+        public async Task<IActionResult> AssetIn()
         {
             if (HttpContext.Session.GetString("Nrp") == null)
                 return RedirectToAction("Index", "Login");
+            
+            // Get categories from database
+            var categories = await _context.TblMAssetCategories
+                .Where(x => !string.IsNullOrEmpty(x.KategoriBarang))
+                .OrderBy(x => x.KategoriBarang)
+                .ToListAsync();
+            
+            ViewBag.Categories = categories;
             return View();
         }
 
-        public IActionResult AssetOut()
+        public async Task<IActionResult> AssetOut()
         {
             if (HttpContext.Session.GetString("Nrp") == null)
                 return RedirectToAction("Index", "Login");
+            
+            // Get categories from database
+            var categories = await _context.TblMAssetCategories
+                .Where(x => !string.IsNullOrEmpty(x.KategoriBarang))
+                .OrderBy(x => x.KategoriBarang)
+                .ToListAsync();
+            
+            ViewBag.Categories = categories;
             return View();
         }
 
@@ -654,15 +670,32 @@ namespace AssetTaking.Controllers
             return RedirectToAction("AssetOut");
         }
 
-        public IActionResult GenerateQR()
+        public async Task<IActionResult> GenerateQR(string nama = "", string nomor = "", string kode = "", string kategori = "", int? qty = null)
         {
             if (HttpContext.Session.GetString("Nrp") == null)
                 return RedirectToAction("Index", "Login");
+            
+            // Get categories from database
+            var categories = await _context.TblMAssetCategories
+                .Where(x => !string.IsNullOrEmpty(x.KategoriBarang))
+                .OrderBy(x => x.KategoriBarang)
+                .ToListAsync();
+            
+            ViewBag.Categories = categories;
+            
+            // Pass data to view for form pre-population
+            ViewBag.PreNamaBarang = nama;
+            ViewBag.PreNomorAsset = nomor;
+            ViewBag.PreKodeBarang = kode;
+            ViewBag.PreKategoriBarang = kategori;
+            ViewBag.PreQty = qty ?? 1;
+            
             return View();
         }
 
         [HttpPost]
-        public IActionResult GenerateQR(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang)
+        [ActionName("GenerateQR")]
+        public IActionResult GenerateQRPost(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty)
         {
             try
             {
@@ -678,13 +711,20 @@ namespace AssetTaking.Controllers
                     return View();
                 }
 
+                if (qty == null || qty <= 0)
+                {
+                    ViewBag.Error = "Quantity harus diisi dengan nilai yang valid (lebih dari 0)";
+                    return View();
+                }
+
                 // Buat JSON data untuk QR Code sesuai format scan yang sudah ada
                 var qrDataObject = new
                 {
                     nomorAsset = nomorAsset ?? "",
                     namaBarang = namaBarang,
                     kodeBarang = kodeBarang ?? "",
-                    kategoriBarang = kategoriBarang
+                    kategoriBarang = kategoriBarang,
+                    qty = qty.Value
                 };
                 
                 var qrData = System.Text.Json.JsonSerializer.Serialize(qrDataObject);
@@ -693,6 +733,7 @@ namespace AssetTaking.Controllers
                 ViewBag.NomorAsset = nomorAsset;
                 ViewBag.KategoriBarang = kategoriBarang;
                 ViewBag.KodeBarang = kodeBarang;
+                ViewBag.Qty = qty;
                 ViewBag.QRData = qrData;
                 ViewBag.Success = "QR Code berhasil digenerate!";
 
@@ -706,12 +747,13 @@ namespace AssetTaking.Controllers
         }
 
         [HttpGet]
-        public IActionResult PrintLabel(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, string qrData)
+        public IActionResult PrintLabel(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string qrData)
         {
             ViewBag.NamaBarang = namaBarang;
             ViewBag.NomorAsset = nomorAsset;
             ViewBag.KategoriBarang = kategoriBarang;
             ViewBag.KodeBarang = kodeBarang;
+            ViewBag.Qty = qty;
             ViewBag.QRData = qrData;
 
             return View();

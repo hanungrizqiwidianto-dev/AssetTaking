@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AssetTaking.Models;
 using AssetTaking.Common;
+using Microsoft.EntityFrameworkCore;
 
 namespace AssetTaking.Controllers.Api
 {
@@ -13,6 +14,29 @@ namespace AssetTaking.Controllers.Api
         public AssetInController(DbRndAssetTakingContext context)
         {
             _context = context;
+        }
+
+        [HttpGet("GetCategories")]
+        public async Task<IActionResult> GetCategories()
+        {
+            try
+            {
+                var categories = await _context.TblMAssetCategories
+                    .Where(x => !string.IsNullOrEmpty(x.KategoriBarang))
+                    .OrderBy(x => x.KategoriBarang)
+                    .Select(x => new
+                    {
+                        value = x.KategoriBarang,
+                        text = x.KategoriBarang
+                    })
+                    .ToListAsync();
+
+                return Ok(new { success = true, data = categories });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message });
+            }
         }
 
         [HttpPost("GenerateItemCode")]

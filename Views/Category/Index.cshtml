@@ -1,0 +1,43 @@
+@{
+    ViewData["Title"] = "Category Asset Management";
+}
+
+<h2 class="content-heading">Category Asset Management</h2>
+
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <i class="fa fa-tags me-1"></i>
+            Daftar Kategori Asset
+        </h3>
+        <div class="block-options">
+            <button type="button" class="btn btn-primary btn-sm" id="btnAddCategory">
+                <i class="fa fa-plus me-1"></i>
+                Tambah Kategori
+            </button>
+        </div>
+    </div>
+    <div class="block-content">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-vcenter" id="categoryTable">
+                <thead>
+                    <tr>
+                        <th class="text-center" style="width: 50px;">No</th>
+                        <th>Kategori Barang</th>
+                        <th style="width: 150px;">Created At</th>
+                        <th style="width: 100px;">Created By</th>
+                        <th style="width: 150px;">Modified At</th>
+                        <th style="width: 100px;">Modified By</th>
+                        <th class="text-center" style="width: 120px;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/CategoryManagement.js"></script>
+}

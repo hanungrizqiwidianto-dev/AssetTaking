@@ -1,10 +1,44 @@
 ﻿var e = Swal.mixin({ buttonsStyling: !1, customClass: { confirmButton: "btn btn-alt-success m-5", cancelButton: "btn btn-alt-danger m-5", input: "form-control" } });
 
 function PostLogin() {
+    // Validation
+    const username = $("#login-username").val().trim();
+    const password = $("#login-password").val().trim();
+    const jobsite = $("#jobSite").val();
+    
+    if (!username) {
+        Swal.fire({
+            title: "Validation Error!",
+            text: "Please enter your username.",
+            icon: 'warning',
+        });
+        $("#login-username").focus();
+        return;
+    }
+    
+    if (!password) {
+        Swal.fire({
+            title: "Validation Error!",
+            text: "Please enter your password.",
+            icon: 'warning',
+        });
+        $("#login-password").focus();
+        return;
+    }
+    
+    if (!jobsite) {
+        Swal.fire({
+            title: "Validation Error!",
+            text: "Please select a role.",
+            icon: 'warning',
+        });
+        return;
+    }
+
     var obj = {
-        Username: $("#login-username").val(),
-        Password: $("#login-password").val(),
-        Jobsite: $("#jobSite").val()
+        Username: username,
+        Password: password,
+        Jobsite: jobsite
     };
 
     $.ajax({
@@ -14,7 +48,11 @@ function PostLogin() {
         type: "POST",
         contentType: "application/json; charset=utf-8",
         beforeSend: function () {
+            // Show loading state
             $("#overlay").show();
+            $("#loginBtn").prop('disabled', true);
+            $("#loginBtnText").text('Signing In...');
+            $("#loginSpinner").show();
         },
         success: function (data) {
             console.log(data);
@@ -22,19 +60,22 @@ function PostLogin() {
                 MakeSession(obj.Username, obj.Jobsite);
             } else {
                 Swal.fire({
-                    title: "Error!",
+                    title: "Login Failed!",
                     text: "Username or Password incorrect.",
                     icon: 'error',
+                    confirmButtonColor: '#667eea'
                 });
-                $("#overlay").hide();
+                resetLoginButton();
             }
         },
         error: function (xhr) {
             Swal.fire({
-                title: "Error!",
-                text: 'Message : ' + xhr.responseText,
+                title: "Connection Error!",
+                text: 'Unable to connect to server. Please try again later.',
                 icon: 'error',
+                confirmButtonColor: '#667eea'
             });
+            resetLoginButton();
         }
     });
 }
@@ -57,17 +98,31 @@ function MakeSession(nrp, site) {
                 window.location.href = "/Home/Index";
             } else {
                 Swal.fire({
-                    title: "Error!",
-                    text: data.message,
+                    title: "Session Error!",
+                    text: data.message || "Failed to create session. Please try again.",
                     icon: 'error',
+                    confirmButtonColor: '#667eea'
                 });
-                $("#overlay").hide();
+                resetLoginButton();
             }
         },
         error: function (xhr) {
-            alert(xhr.responseText);
+            Swal.fire({
+                title: "Server Error!",
+                text: 'Unable to process request. Please contact administrator.',
+                icon: 'error',
+                confirmButtonColor: '#667eea'
+            });
+            resetLoginButton();
         }
     });
+}
+
+function resetLoginButton() {
+    $("#overlay").hide();
+    $("#loginBtn").prop('disabled', false);
+    $("#loginBtnText").text('Sign In');
+    $("#loginSpinner").hide();
 }
 
 function getRole() {
@@ -124,10 +179,30 @@ $(document).ready(function () {
         console.log("Initializing select2 and calling getRole");
         $('#jobSite').select2({
             placeholder: "Select a role",
-            allowClear: true
+            allowClear: true,
+            theme: 'bootstrap-5'
         });
         
         // Call getRole after a small delay to ensure DOM is ready
         getRole();
     }, 500);
+    
+    // Handle Enter key press for login
+    $('#loginForm input').on('keypress', function(e) {
+        if (e.which === 13) { // Enter key
+            e.preventDefault();
+            PostLogin();
+        }
+    });
+    
+    // Handle form submission
+    $('#loginForm').on('submit', function(e) {
+        e.preventDefault();
+        PostLogin();
+    });
+    
+    // Focus on username field on page load
+    setTimeout(function() {
+        $('#login-username').focus();
+    }, 1000);
 });

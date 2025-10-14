@@ -8,16 +8,183 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>Login | Asset Taking</title>
+    <title>Login | Asset Taking - Pama Persada Nusantara</title>
 
     <!-- Favicons -->
-    @* <link rel="shortcut icon" href="~/assets/media/favicons/favicon.png"> *@
+    <link rel="shortcut icon" href="https://www.pama.co.id/wp-content/uploads/2019/11/cropped-Untitled-2-32x32.png" type="image/png">
+    <link rel="icon" href="https://www.pama.co.id/wp-content/uploads/2019/11/cropped-Untitled-2-32x32.png" sizes="32x32">
+    <link rel="apple-touch-icon" href="https://www.pama.co.id/wp-content/uploads/2019/11/cropped-Untitled-2-180x180.png")
 
     <!-- Stylesheets -->
     <link rel="stylesheet" href="~/assets/js/plugins/select2/css/select2.min.css">
     <link rel="stylesheet" href="~/assets/js/plugins/sweetalert2/sweetalert2.min.css">
     <link rel="stylesheet" id="css-main" href="~/assets/css/codebase.min.css">
     <link rel="stylesheet" href="~/css/site.css" />
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Login Styles -->
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            padding: 3rem 2.5rem;
+            width: 100%;
+            max-width: 450px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .logo-container {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .logo-img {
+            max-height: 80px;
+            width: auto;
+            margin-bottom: 1rem;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+        }
+        
+        .app-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        
+        .app-subtitle {
+            color: #718096;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            font-weight: 500;
+        }
+        
+        .form-floating {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-control {
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .form-control:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            background: white;
+        }
+        
+        .form-select {
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            padding: 1rem 1.25rem;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-login {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-login:active {
+            transform: translateY(0);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+        }
+        
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+            margin: 1.5rem 0;
+            border: none;
+        }
+        
+        @@media (max-width: 768px) {
+            .login-card {
+                padding: 2rem 1.5rem;
+                margin: 1rem;
+                border-radius: 15px;
+            }
+            
+            .app-title {
+                font-size: 1.75rem;
+            }
+            
+            .logo-img {
+                max-height: 60px;
+            }
+        }
+        
+        /* Loading animation */
+        .spinner-border-custom {
+            width: 1.2rem;
+            height: 1.2rem;
+            border-width: 2px;
+        }
+        
+        /* Select2 custom styles */
+        .select2-container--default .select2-selection--single {
+            border-radius: 12px !important;
+            border: 2px solid #e2e8f0 !important;
+            height: calc(3.5rem + 2px) !important;
+            padding: 0.5rem !important;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            padding-left: 1rem !important;
+            line-height: 2.5rem !important;
+            font-size: 1rem !important;
+        }
+    </style>
 
     <!-- jQuery -->
     <script src="~/assets/js/lib/jquery.min.js"></script>
@@ -37,52 +204,58 @@
     <input type="hidden" id="hd_site" value="@Context.Session.GetString("Site")" />
     <input type="hidden" id="hd_position" value="@Context.Session.GetString("PositionID")" />
 
-    <div id="page-container" class="main-content-boxed">
-        <main id="main-container">
-            <div class="bg-white">
-                <div class="hero-static content content-full bg-body-extra-light">
-                    <!-- Header -->
-                    <div class="py-4 px-1 text-center mb-4">
-                        <a class="link-fx fw-bold" href="#">
-                            <i class="fa fa-fire"></i>
-                            <span class="fs-4">Asset Taking</span>
-                        </a>
-                        <h2 class="h5 fw-medium text-muted mb-0">Please sign in</h2>
-                    </div>
-
-                    <!-- Login Form -->
-                    <div class="row justify-content-center px-1">
-                        <div class="col-sm-8 col-md-6 col-xl-4">
-                            <form>
-                                <div class="form-floating mb-4">
-                                    <input type="text" class="form-control form-control-sm" id="login-username" placeholder="Enter your username">
-                                    <label for="login-username">Username</label>
-                                </div>
-                                <div class="form-floating mb-4">
-                                    <input type="password" class="form-control form-control-sm" id="login-password" placeholder="Enter your password">
-                                    <label for="login-password">Password</label>
-                                </div>
-                                <hr />
-                                <div class="form-group mb-4">
-                                    <label for="jobSite">Role</label>
-                                    <select class="js-select2 form-select" id="jobSite" style="width: 100%;">
-                                        <option>Loading...</option>
-                                    </select>
-                                </div>
-                                <div class="row g-sm mb-4">
-                                    <div class="col-12 mb-2">
-                                        <button type="button" onclick="PostLogin()" class="btn btn-lg btn-alt-primary w-100 py-3 fw-semibold">
-                                            Sign In
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    <!-- END Login Form -->
+    <div class="login-container">
+        <div class="login-card">
+            <!-- Logo and Header -->
+            <div class="logo-container">
+                <img src="https://www.pama.co.id/wp-content/uploads/2019/11/logo-pama.png" 
+                     alt="Pama Persada Nusantara" class="logo-img" 
+                     onerror="this.style.display='none'; document.getElementById('fallback-logo').style.display='block';">
+                <div id="fallback-logo" style="display: none;">
+                    <i class="fas fa-clipboard-list fa-3x text-primary mb-3"></i>
                 </div>
+                <h1 class="app-title">Asset Taking</h1>
+                <p class="app-subtitle">Pama Persada Nusantara</p>
             </div>
-        </main>
+
+            <!-- Login Form -->
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label for="login-username" class="form-label">
+                        <i class="fas fa-user me-2"></i>Username
+                    </label>
+                    <input type="text" class="form-control" id="login-username" 
+                           placeholder="Enter your username" required>
+                </div>
+                
+                <div class="mb-4">
+                    <label for="login-password" class="form-label">
+                        <i class="fas fa-lock me-2"></i>Password
+                    </label>
+                    <input type="password" class="form-control" id="login-password" 
+                           placeholder="Enter your password" required>
+                </div>
+                
+                <hr class="divider">
+                
+                <div class="mb-4">
+                    <label for="jobSite" class="form-label">
+                        <i class="fas fa-user-tag me-2"></i>Role
+                    </label>
+                    <select class="js-select2 form-select" id="jobSite" style="width: 100%;" required>
+                        <option value="">Select a role</option>
+                    </select>
+                </div>
+                
+                <div class="d-grid">
+                    <button type="button" onclick="PostLogin()" class="btn btn-login" id="loginBtn">
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        <span id="loginBtnText">Sign In</span>
+                        <span id="loginSpinner" class="spinner-border spinner-border-custom ms-2" style="display: none;"></span>
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- Core JS -->

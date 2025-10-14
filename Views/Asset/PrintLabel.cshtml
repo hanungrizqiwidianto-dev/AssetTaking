@@ -207,9 +207,15 @@
                         <span class="info-value">@ViewBag.KodeBarang</span>
                     </div>
                 }
-        </div>
-        
-        <div class="label-footer">
+                
+                @if (ViewBag.Qty != null)
+                {
+                    <div class="info-row">
+                        <span class="info-label">Quantity:</span>
+                        <span class="info-value">@ViewBag.Qty</span>
+                    </div>
+                }
+            </div>        <div class="label-footer">
             Generated: @DateTime.Now.ToString("dd/MM/yyyy HH:mm") | Scan QR code untuk detail asset
         </div>
     </div>

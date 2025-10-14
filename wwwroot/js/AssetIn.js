@@ -1,5 +1,8 @@
 ﻿$(document).ready(function() {
     console.log("AssetIn.js loaded");
+    
+    // Load categories from database
+    loadCategories();
 
     // Image preview functionality
     $('#fotoFile').on('change', function(e) {
@@ -902,4 +905,32 @@
         $('#uploadExcelBtn').prop('disabled', false);
         $('#excelFile').removeClass('is-invalid');
     });
+
+    // Load categories from database
+    async function loadCategories() {
+        try {
+            const response = await fetch('/api/AssetIn/GetCategories');
+            const result = await response.json();
+            
+            if (result.success) {
+                const categorySelects = ['#kategoriBarang', '#scan_kategoriBarang'];
+                
+                categorySelects.forEach(selector => {
+                    const selectElement = $(selector);
+                    if (selectElement.length) {
+                        // Keep the first option (placeholder)
+                        const placeholder = selectElement.find('option:first');
+                        selectElement.empty().append(placeholder);
+                        
+                        // Add categories from database
+                        result.data.forEach(category => {
+                            selectElement.append(`<option value="${category.value}">${category.text}</option>`);
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error loading categories:', error);
+        }
+    }
 });

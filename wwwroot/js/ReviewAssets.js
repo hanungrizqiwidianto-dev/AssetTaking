@@ -32,6 +32,15 @@ $(document).ready(function () {
                                    title="View Details">
                                    <i class="fa fa-eye"></i>
                                 </button>
+                                <button type="button" class="btn btn-sm btn-success btn-generate-qr me-1" 
+                                   data-kode="${row.kodeBarang}" 
+                                   data-nomor="${row.nomorAsset}"
+                                   data-nama="${row.namaBarang}"
+                                   data-kategori="${row.kategoriBarang}"
+                                   data-qty="${row.qty}"
+                                   title="Generate QR Code">
+                                   <i class="fa fa-qrcode"></i>
+                                </button>
                                 <button type="button" class="btn btn-sm btn-danger btn-delete-all" 
                                    data-kode="${row.kodeBarang}" 
                                    data-nomor="${row.nomorAsset}"
@@ -155,6 +164,15 @@ $(document).ready(function () {
                                                 title="Edit Asset">
                                                 <i class="fa fa-edit"></i> Edit
                                             </button>
+                                            <button type="button" class="btn btn-sm btn-success btn-generate-qr-detail ms-2" 
+                                                data-nama="${asset.namaBarang}"
+                                                data-nomor="${asset.nomorAsset}"
+                                                data-kode="${asset.kodeBarang}"
+                                                data-kategori="${asset.kategoriBarang}"
+                                                data-qty="${asset.qty}"
+                                                title="Generate QR Code">
+                                                <i class="fa fa-qrcode"></i> Generate QR
+                                            </button>
                                             <button type="button" class="btn btn-sm btn-danger btn-delete-asset ms-2" 
                                                 data-id="${asset.id}"
                                                 data-nama="${asset.namaBarang}"
@@ -212,6 +230,28 @@ $(document).ready(function () {
         const namaBarang = $(this).data('nama');
         
         deleteAllAssetTransactions(kodeBarang, nomorAsset, namaBarang);
+    });
+
+    // Handle generate QR button click (from main table)
+    $(document).on('click', '.btn-generate-qr', function() {
+        const namaBarang = $(this).data('nama');
+        const nomorAsset = $(this).data('nomor');
+        const kodeBarang = $(this).data('kode');
+        const kategoriBarang = $(this).data('kategori');
+        const qty = $(this).data('qty');
+        
+        generateQRFromAsset(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty);
+    });
+
+    // Handle generate QR button click (from modal detail)
+    $(document).on('click', '.btn-generate-qr-detail', function() {
+        const namaBarang = $(this).data('nama');
+        const nomorAsset = $(this).data('nomor');
+        const kodeBarang = $(this).data('kode');
+        const kategoriBarang = $(this).data('kategori');
+        const qty = $(this).data('qty');
+        
+        generateQRFromAsset(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty);
     });
 
     // Show edit asset modal
@@ -492,5 +532,20 @@ $(document).ready(function () {
                 }
             }
         });
+    }
+
+    // Function untuk generate QR dari asset data
+    function generateQRFromAsset(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty) {
+        // Encode parameters untuk URL
+        const params = new URLSearchParams({
+            nama: namaBarang || '',
+            nomor: nomorAsset || '',
+            kode: kodeBarang || '',
+            kategori: kategoriBarang || '',
+            qty: qty || '1'
+        });
+        
+        // Redirect ke halaman Generate QR dengan parameter
+        window.location.href = `/Asset/GenerateQR?${params.toString()}`;
     }
 });

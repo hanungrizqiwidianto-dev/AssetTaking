@@ -38,34 +38,32 @@
                     <div class="mb-4">
                         <label class="form-label" for="namaBarang">Nama Barang <span class="text-danger">*</span></label>
                         <input type="text" class="form-control" id="namaBarang" name="namaBarang" 
-                               value="@ViewBag.NamaBarang" placeholder="Masukkan nama barang" required>
+                               value="@ViewBag.PreNamaBarang" placeholder="Masukkan nama barang" required>
                     </div>
                     
                     <div class="mb-4">
                         <label class="form-label" for="nomorAsset">Nomor Asset</label>
                         <input type="text" class="form-control" id="nomorAsset" name="nomorAsset" 
-                               value="@ViewBag.NomorAsset" placeholder="Masukkan nomor asset (opsional)">
+                               value="@ViewBag.PreNomorAsset" placeholder="Masukkan nomor asset (opsional)">
                     </div>
                     
                     <div class="mb-4">
                         <label class="form-label" for="kategoriBarang">Kategori Barang <span class="text-danger">*</span></label>
                         <select class="form-control" id="kategoriBarang" name="kategoriBarang" required>
                             <option value="">Pilih Kategori...</option>
-                            @if (ViewBag.KategoriBarang?.ToString() == "SPAREPART")
+                            @if (ViewBag.Categories != null)
                             {
-                                <option value="SPAREPART" selected="selected">Spare Part</option>
-                            }
-                            else
-                            {
-                                <option value="SPAREPART">Spare Part</option>
-                            }
-                            @if (ViewBag.KategoriBarang?.ToString() == "RnD")
-                            {
-                                <option value="RnD" selected="selected">RnD Assets</option>
-                            }
-                            else
-                            {
-                                <option value="RnD">RnD Assets</option>
+                                @foreach (var category in ViewBag.Categories)
+                                {
+                                    @if (ViewBag.PreKategoriBarang?.ToString() == category.KategoriBarang)
+                                    {
+                                        <option value="@category.KategoriBarang" selected="selected">@category.KategoriBarang</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@category.KategoriBarang">@category.KategoriBarang</option>
+                                    }
+                                }
                             }
                         </select>
                     </div>
@@ -73,10 +71,20 @@
                     <div class="mb-4">
                         <label class="form-label" for="kodeBarang">Kode Barang</label>
                         <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" 
-                               value="@ViewBag.KodeBarang" readonly disabled>
+                               value="@ViewBag.PreKodeBarang" readonly disabled>
                         <div class="form-text text-muted">
                             <i class="fa fa-info-circle me-1"></i>
                             Kode barang akan otomatis diisi berdasarkan kategori yang dipilih
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label" for="qty">Quantity <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="qty" name="qty" 
+                               value="@ViewBag.PreQty" min="1" required>
+                        <div class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Masukkan jumlah quantity barang
                         </div>
                     </div>
                     
@@ -140,6 +148,13 @@
                                             <td class="text-start">@ViewBag.KodeBarang</td>
                                         </tr>
                                     }
+                                    @if (ViewBag.Qty != null)
+                                    {
+                                        <tr>
+                                            <td class="text-start"><strong>Quantity:</strong></td>
+                                            <td class="text-start">@ViewBag.Qty</td>
+                                        </tr>
+                                    }
                                 </table>
                             </div>
                         </div>
@@ -151,6 +166,7 @@
                             nomorAsset = ViewBag.NomorAsset, 
                             kategoriBarang = ViewBag.KategoriBarang, 
                             kodeBarang = ViewBag.KodeBarang,
+                            qty = ViewBag.Qty,
                             qrData = ViewBag.QRData 
                         })" class="btn btn-success btn-lg px-4 py-2" target="_blank">
                             <i class="fa fa-print me-2"></i> Print Label
@@ -286,6 +302,7 @@ function downloadLabel() {
         var nomorAsset = '@ViewBag.NomorAsset';
         var kodeBarang = '@ViewBag.KodeBarang';
         var kategoriBarang = '@ViewBag.KategoriBarang';
+        var qty = '@ViewBag.Qty';
         var timestamp = '@DateTime.Now.ToString("yyyyMMdd_HHmmss")';
         
         // Create canvas for label
@@ -373,6 +390,15 @@ function downloadLabel() {
                 ctx.fillText('Kode Barang:', startX, currentY);
                 ctx.font = '10px Arial';
                 ctx.fillText(kodeBarang, startX + 80, currentY);
+                currentY += lineHeight;
+            }
+            
+            // Quantity (if exists)
+            if (qty && qty.trim() !== '' && qty !== '0') {
+                ctx.font = 'bold 11px Arial';
+                ctx.fillText('Quantity:', startX, currentY);
+                ctx.font = '10px Arial';
+                ctx.fillText(qty, startX + 80, currentY);
                 currentY += lineHeight;
             }
             
