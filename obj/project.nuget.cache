@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "WKZZTUCl9Y0=",
+  "dgSpecHash": "RorbaB0XXyQ=",
   "success": true,
-  "projectFilePath": "D:\\PamaApp\\AssetTaking\\AssetTaking.csproj",
+  "projectFilePath": "D:\\PamaApp\\AssetTaking2\\AssetTaking\\AssetTaking.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\hanungrisqi\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\hanungrisqi\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",

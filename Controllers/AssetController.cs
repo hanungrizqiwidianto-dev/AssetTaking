@@ -695,10 +695,17 @@ namespace AssetTaking.Controllers
 
         [HttpPost]
         [ActionName("GenerateQR")]
-        public IActionResult GenerateQRPost(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty)
+        public async Task<IActionResult> GenerateQRPost(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string generateMode = "single")
         {
             try
             {
+                // Get categories for dropdown reload
+                var categories = await _context.TblMAssetCategories
+                    .Where(x => !string.IsNullOrEmpty(x.KategoriBarang))
+                    .OrderBy(x => x.KategoriBarang)
+                    .ToListAsync();
+                ViewBag.Categories = categories;
+
                 if (string.IsNullOrEmpty(namaBarang))
                 {
                     ViewBag.Error = "Nama barang harus diisi";
@@ -717,27 +724,117 @@ namespace AssetTaking.Controllers
                     return View();
                 }
 
-                // Buat JSON data untuk QR Code sesuai format scan yang sudah ada
-                var qrDataObject = new
+                if (generateMode == "batch")
                 {
-                    nomorAsset = nomorAsset ?? "",
-                    namaBarang = namaBarang,
-                    kodeBarang = kodeBarang ?? "",
-                    kategoriBarang = kategoriBarang,
-                    qty = qty.Value
-                };
-                
-                var qrData = System.Text.Json.JsonSerializer.Serialize(qrDataObject);
+                    if (qty < 2)
+                    {
+                        ViewBag.Error = "Untuk batch generate, quantity minimal 2";
+                        return View();
+                    }
 
-                ViewBag.NamaBarang = namaBarang;
-                ViewBag.NomorAsset = nomorAsset;
-                ViewBag.KategoriBarang = kategoriBarang;
-                ViewBag.KodeBarang = kodeBarang;
-                ViewBag.Qty = qty;
-                ViewBag.QRData = qrData;
-                ViewBag.Success = "QR Code berhasil digenerate!";
+                    if (qty > 100)
+                    {
+                        ViewBag.Error = "Untuk batch generate, quantity maksimal 100";
+                        return View();
+                    }
 
-                return View();
+                    // Generate batch QR codes
+                    var batchData = new List<Dictionary<string, object>>();
+                    
+                    // Get base next number for this category
+                    string prefix = GetCategoryPrefix(kategoriBarang);
+                    var existingCodes = await _context.TblTAssets
+                        .Where(a => a.KodeBarang != null && a.KodeBarang.StartsWith(prefix + "-"))
+                        .Select(a => a.KodeBarang)
+                        .ToListAsync();
+
+                    int baseNextNumber = 1;
+                    if (existingCodes.Any())
+                    {
+                        var numbers = existingCodes
+                            .Select(code => 
+                            {
+                                var parts = code.Split('-');
+                                if (parts.Length > 1 && int.TryParse(parts[1], out int num))
+                                    return num;
+                                return 0;
+                            })
+                            .Where(num => num > 0);
+
+                        if (numbers.Any())
+                        {
+                            baseNextNumber = numbers.Max() + 1;
+                        }
+                    }
+                    
+                    for (int i = 1; i <= qty; i++)
+                    {
+                        string uniqueKodeBarang = $"{prefix}-{baseNextNumber + i - 1}";
+                        string uniqueNomorAsset = !string.IsNullOrEmpty(nomorAsset) ? $"{nomorAsset}-{i:D3}" : "";
+                        
+                        var qrDataObject = new Dictionary<string, object>
+                        {
+                            ["nomorAsset"] = uniqueNomorAsset,
+                            ["namaBarang"] = namaBarang,
+                            ["kodeBarang"] = uniqueKodeBarang,
+                            ["kategoriBarang"] = kategoriBarang,
+                            ["qty"] = 1,
+                            ["batchNumber"] = i,
+                            ["totalBatch"] = qty.Value
+                        };
+
+                        batchData.Add(qrDataObject);
+                    }
+
+                    ViewBag.IsBatch = true;
+                    ViewBag.BatchData = batchData;
+                    ViewBag.NamaBarang = namaBarang;
+                    ViewBag.NomorAsset = nomorAsset;
+                    ViewBag.KategoriBarang = kategoriBarang;
+                    ViewBag.KodeBarang = GetCategoryPrefix(kategoriBarang);
+                    ViewBag.Qty = qty;
+                    ViewBag.Success = $"Batch QR Code berhasil digenerate untuk {qty} item!";
+
+                    return View();
+                }
+                else
+                {
+                    // Single generate mode
+                    if (qty != 1)
+                    {
+                        ViewBag.Error = "Untuk single generate, quantity harus 1";
+                        return View();
+                    }
+
+                    // Generate kode barang if not provided
+                    if (string.IsNullOrEmpty(kodeBarang))
+                    {
+                        kodeBarang = GenerateKodeBarang(kategoriBarang);
+                    }
+
+                    // Buat JSON data untuk QR Code sesuai format scan yang sudah ada
+                    var qrDataObject = new
+                    {
+                        nomorAsset = nomorAsset ?? "",
+                        namaBarang = namaBarang,
+                        kodeBarang = kodeBarang,
+                        kategoriBarang = kategoriBarang,
+                        qty = qty.Value
+                    };
+                    
+                    var qrData = System.Text.Json.JsonSerializer.Serialize(qrDataObject);
+
+                    ViewBag.IsBatch = false;
+                    ViewBag.NamaBarang = namaBarang;
+                    ViewBag.NomorAsset = nomorAsset;
+                    ViewBag.KategoriBarang = kategoriBarang;
+                    ViewBag.KodeBarang = kodeBarang;
+                    ViewBag.Qty = qty;
+                    ViewBag.QRData = qrData;
+                    ViewBag.Success = "QR Code berhasil digenerate!";
+
+                    return View();
+                }
             }
             catch (Exception ex)
             {
@@ -746,8 +843,75 @@ namespace AssetTaking.Controllers
             }
         }
 
+        private string GetCategoryPrefix(string kategori)
+        {
+            switch (kategori.ToUpper())
+            {
+                case "RND":
+                case "R&D":
+                case "RESEARCH AND DEVELOPMENT":
+                    return "RND";
+                case "SPARE PART":
+                case "SPAREPART":
+                case "SP":
+                    return "SPA";
+                case "ELEKTRONIK":
+                case "ELECTRONIC":
+                case "ELK":
+                    return "ELK";
+                case "FURNITURE":
+                case "FURNITUR":
+                case "FRN":
+                    return "FRN";
+                case "KENDARAAN":
+                case "VEHICLE":
+                case "VHC":
+                    return "VHC";
+                case "PERALATAN":
+                case "EQUIPMENT":
+                case "EQP":
+                    return "EQP";
+                default:
+                    return kategori.Length >= 3 
+                        ? kategori.Substring(0, 3).ToUpper() 
+                        : kategori.ToUpper();
+            }
+        }
+
+        private string GenerateKodeBarang(string kategori)
+        {
+            string prefix = GetCategoryPrefix(kategori);
+
+            // Get the next number for this category
+            var existingCodes = _context.TblTAssets
+                .Where(a => a.KodeBarang != null && a.KodeBarang.StartsWith(prefix + "-"))
+                .Select(a => a.KodeBarang)
+                .ToList();
+
+            int nextNumber = 1;
+            if (existingCodes.Any())
+            {
+                var numbers = existingCodes
+                    .Select(code => 
+                    {
+                        var parts = code.Split('-');
+                        if (parts.Length > 1 && int.TryParse(parts[1], out int num))
+                            return num;
+                        return 0;
+                    })
+                    .Where(num => num > 0);
+
+                if (numbers.Any())
+                {
+                    nextNumber = numbers.Max() + 1;
+                }
+            }
+
+            return $"{prefix}-{nextNumber}";
+        }
+
         [HttpGet]
-        public IActionResult PrintLabel(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string qrData)
+        public IActionResult PrintLabel(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string qrData, string batchData)
         {
             ViewBag.NamaBarang = namaBarang;
             ViewBag.NomorAsset = nomorAsset;
@@ -756,7 +920,146 @@ namespace AssetTaking.Controllers
             ViewBag.Qty = qty;
             ViewBag.QRData = qrData;
 
+            // Handle batch data
+            if (!string.IsNullOrEmpty(batchData))
+            {
+                try
+                {
+                    // Deserialize as List<Dictionary<string, object>> untuk handling yang lebih baik
+                    var batchItems = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(batchData);
+                    ViewBag.BatchData = batchItems;
+                    ViewBag.IsBatch = true;
+                }
+                catch (Exception ex)
+                {
+                    // Jika error, coba deserialize sebagai List<object> seperti sebelumnya
+                    try
+                    {
+                        var batchItems = System.Text.Json.JsonSerializer.Deserialize<List<object>>(batchData);
+                        ViewBag.BatchData = batchItems;
+                        ViewBag.IsBatch = true;
+                    }
+                    catch (Exception ex2)
+                    {
+                        ViewBag.Error = $"Error parsing batch data: {ex2.Message}";
+                        ViewBag.IsBatch = false;
+                    }
+                }
+            }
+            else
+            {
+                ViewBag.IsBatch = false;
+            }
+
             return View();
+        }
+
+        [HttpPost]
+        public IActionResult DownloadBatchLabels(string batchData)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(batchData))
+                {
+                    return BadRequest("Batch data is required");
+                }
+
+                // Deserialize batch data
+                var batchItems = System.Text.Json.JsonSerializer.Deserialize<List<Dictionary<string, object>>>(batchData);
+                
+                if (batchItems == null || !batchItems.Any())
+                {
+                    return BadRequest("No batch items found");
+                }
+
+                // Generate HTML content for all labels
+                var htmlContent = GenerateBatchLabelsHtml(batchItems);
+                
+                // Convert HTML to bytes
+                var htmlBytes = System.Text.Encoding.UTF8.GetBytes(htmlContent);
+                
+                // Return as downloadable HTML file
+                var fileName = $"Batch_Labels_{DateTime.Now:yyyyMMdd_HHmmss}.html";
+                return File(htmlBytes, "text/html", fileName);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest($"Error generating batch labels: {ex.Message}");
+            }
+        }
+
+        private string GenerateBatchLabelsHtml(List<Dictionary<string, object>> batchItems)
+        {
+            var html = new StringBuilder();
+            
+            // HTML header with print styles
+            html.AppendLine("<!DOCTYPE html>");
+            html.AppendLine("<html>");
+            html.AppendLine("<head>");
+            html.AppendLine("<meta charset='utf-8'>");
+            html.AppendLine("<title>Batch Asset Labels</title>");
+            html.AppendLine("<style>");
+            html.AppendLine(@"
+                body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+                .label-container { display: flex; flex-wrap: wrap; gap: 20px; }
+                .label { 
+                    width: 250px; 
+                    border: 2px solid #000; 
+                    padding: 15px; 
+                    margin-bottom: 20px;
+                    page-break-inside: avoid;
+                    display: inline-block;
+                    vertical-align: top;
+                }
+                .label h3 { margin: 0 0 10px 0; text-align: center; font-size: 16px; }
+                .label .qr-code { text-align: center; margin: 10px 0; }
+                .label .qr-code img { width: 100px; height: 100px; }
+                .label .details { font-size: 12px; line-height: 1.4; }
+                .label .details strong { display: inline-block; width: 80px; }
+                .page-break { page-break-before: always; }
+                @media print {
+                    body { margin: 0; padding: 10px; }
+                    .label { margin-bottom: 15px; }
+                }
+            ");
+            html.AppendLine("</style>");
+            html.AppendLine("</head>");
+            html.AppendLine("<body>");
+            html.AppendLine("<div class='label-container'>");
+
+            // Generate each label
+            for (int i = 0; i < batchItems.Count; i++)
+            {
+                var item = batchItems[i];
+                var qrDataJson = System.Text.Json.JsonSerializer.Serialize(item);
+                var qrCodeUrl = $"https://api.qrserver.com/v1/create-qr-code/?size=150x150&data={System.Web.HttpUtility.UrlEncode(qrDataJson)}";
+
+                html.AppendLine("<div class='label'>");
+                html.AppendLine("<h3>ASSET LABEL</h3>");
+                html.AppendLine("<div class='qr-code'>");
+                html.AppendLine($"<img src='{qrCodeUrl}' alt='QR Code {i + 1}' />");
+                html.AppendLine("</div>");
+                html.AppendLine("<div class='details'>");
+                html.AppendLine($"<div><strong>Kode:</strong> {item.GetValueOrDefault("kodeBarang", "")}</div>");
+                html.AppendLine($"<div><strong>Nama:</strong> {item.GetValueOrDefault("namaBarang", "")}</div>");
+                html.AppendLine($"<div><strong>Kategori:</strong> {item.GetValueOrDefault("kategori", "")}</div>");
+                html.AppendLine($"<div><strong>Lokasi:</strong> {item.GetValueOrDefault("lokasi", "")}</div>");
+                html.AppendLine($"<div><strong>Tanggal:</strong> {DateTime.Now:dd/MM/yyyy}</div>");
+                html.AppendLine("</div>");
+                html.AppendLine("</div>");
+
+                // Add page break every 6 labels for better printing
+                if ((i + 1) % 6 == 0 && i < batchItems.Count - 1)
+                {
+                    html.AppendLine("<div class='page-break'></div>");
+                }
+            }
+
+            html.AppendLine("</div>");
+            html.AppendLine("</body>");
+            html.AppendLine("</html>");
+
+            return html.ToString();
         }
     }
 }

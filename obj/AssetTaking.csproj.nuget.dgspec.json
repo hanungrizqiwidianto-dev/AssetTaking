@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\PamaApp\\AssetTaking\\AssetTaking.csproj": {}
+    "D:\\PamaApp\\AssetTaking2\\AssetTaking\\AssetTaking.csproj": {}
   },
   "projects": {
-    "D:\\PamaApp\\AssetTaking\\AssetTaking.csproj": {
+    "D:\\PamaApp\\AssetTaking2\\AssetTaking\\AssetTaking.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\PamaApp\\AssetTaking\\AssetTaking.csproj",
+        "projectUniqueName": "D:\\PamaApp\\AssetTaking2\\AssetTaking\\AssetTaking.csproj",
         "projectName": "AssetTaking",
-        "projectPath": "D:\\PamaApp\\AssetTaking\\AssetTaking.csproj",
+        "projectPath": "D:\\PamaApp\\AssetTaking2\\AssetTaking\\AssetTaking.csproj",
         "packagesPath": "C:\\Users\\hanungrisqi\\.nuget\\packages\\",
-        "outputPath": "D:\\PamaApp\\AssetTaking\\obj\\",
+        "outputPath": "D:\\PamaApp\\AssetTaking2\\AssetTaking\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

@@ -23,433 +23,709 @@
     </div>
 }
 
-<div class="row">
-    <!-- Form Input -->
-    <div class="col-lg-6">
-        <div class="block block-rounded">
-            <div class="block-header block-header-default">
-                <h3 class="block-title">
-                    <i class="fa fa-plus-circle me-1"></i>
-                    Input Data Barang
-                </h3>
-            </div>
-            <div class="block-content">
-                <form method="post" asp-action="GenerateQR">
-                    <div class="mb-4">
-                        <label class="form-label" for="namaBarang">Nama Barang <span class="text-danger">*</span></label>
-                        <input type="text" class="form-control" id="namaBarang" name="namaBarang" 
-                               value="@ViewBag.PreNamaBarang" placeholder="Masukkan nama barang" required>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label" for="nomorAsset">Nomor Asset</label>
-                        <input type="text" class="form-control" id="nomorAsset" name="nomorAsset" 
-                               value="@ViewBag.PreNomorAsset" placeholder="Masukkan nomor asset (opsional)">
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label" for="kategoriBarang">Kategori Barang <span class="text-danger">*</span></label>
-                        <select class="form-control" id="kategoriBarang" name="kategoriBarang" required>
-                            <option value="">Pilih Kategori...</option>
-                            @if (ViewBag.Categories != null)
-                            {
-                                @foreach (var category in ViewBag.Categories)
-                                {
-                                    @if (ViewBag.PreKategoriBarang?.ToString() == category.KategoriBarang)
-                                    {
-                                        <option value="@category.KategoriBarang" selected="selected">@category.KategoriBarang</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="@category.KategoriBarang">@category.KategoriBarang</option>
-                                    }
-                                }
-                            }
-                        </select>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label" for="kodeBarang">Kode Barang</label>
-                        <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" 
-                               value="@ViewBag.PreKodeBarang" readonly disabled>
-                        <div class="form-text text-muted">
-                            <i class="fa fa-info-circle me-1"></i>
-                            Kode barang akan otomatis diisi berdasarkan kategori yang dipilih
-                        </div>
-                    </div>
-                    
-                    <div class="mb-4">
-                        <label class="form-label" for="qty">Quantity <span class="text-danger">*</span></label>
-                        <input type="number" class="form-control" id="qty" name="qty" 
-                               value="@ViewBag.PreQty" min="1" required>
-                        <div class="form-text text-muted">
-                            <i class="fa fa-info-circle me-1"></i>
-                            Masukkan jumlah quantity barang
-                        </div>
-                    </div>
-                    
-                    <div class="block-content block-content-full text-end bg-body-light">
-                        <button type="button" class="btn btn-secondary me-1" onclick="window.location.href='@Url.Action("Index", "Asset")'">
-                            <i class="fa fa-times me-1"></i> Batal
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-qrcode me-1"></i> Generate QR Code
-                        </button>
-                    </div>
-                </form>
-            </div>
+<!-- Tab Navigation -->
+<div class="block block-rounded">
+    <div class="block-header block-header-default">
+        <h3 class="block-title">
+            <small>Generate QR Code & Label</small>
+        </h3>
+        <div class="block-options">
+            <ul class="nav nav-tabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(ViewBag.IsBatch != true ? "active" : "")" id="single-tab" data-bs-toggle="tab" data-bs-target="#single-generate" type="button" role="tab">
+                        <i class="fa fa-file me-1"></i> Single Generate
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link @(ViewBag.IsBatch == true ? "active" : "")" id="batch-tab" data-bs-toggle="tab" data-bs-target="#batch-generate" type="button" role="tab">
+                        <i class="fa fa-files-o me-1"></i> Batch Generate
+                    </button>
+                </li>
+            </ul>
         </div>
     </div>
     
-    <!-- QR Code Result -->
-    <div class="col-lg-6">
-        @if (ViewBag.QRData != null)
-        {
-            <div class="block block-rounded">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-qrcode me-1"></i>
-                        QR Code Result
-                    </h3>
-                </div>
-                <div class="block-content text-center">
-                    <div class="mb-3">
-                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=@(System.Web.HttpUtility.UrlEncode(ViewBag.QRData?.ToString() ?? ""))" 
-                             alt="QR Code" class="img-fluid border" style="max-width: 300px;" />
-                    </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <div class="bg-light p-3 rounded">
-                                <h5 class="mb-2">Informasi Barang:</h5>
-                                <table class="table table-borderless mb-0">
-                                    <tr>
-                                        <td class="text-start"><strong>Nama Barang:</strong></td>
-                                        <td class="text-start">@ViewBag.NamaBarang</td>
-                                    </tr>
-                                    @if (!string.IsNullOrEmpty(ViewBag.NomorAsset))
-                                    {
-                                        <tr>
-                                            <td class="text-start"><strong>Nomor Asset:</strong></td>
-                                            <td class="text-start">@ViewBag.NomorAsset</td>
-                                        </tr>
-                                    }
-                                    @if (!string.IsNullOrEmpty(ViewBag.KategoriBarang))
-                                    {
-                                        <tr>
-                                            <td class="text-start"><strong>Kategori Barang:</strong></td>
-                                            <td class="text-start">@ViewBag.KategoriBarang</td>
-                                        </tr>
-                                    }
-                                    @if (!string.IsNullOrEmpty(ViewBag.KodeBarang))
-                                    {
-                                        <tr>
-                                            <td class="text-start"><strong>Kode Barang:</strong></td>
-                                            <td class="text-start">@ViewBag.KodeBarang</td>
-                                        </tr>
-                                    }
-                                    @if (ViewBag.Qty != null)
-                                    {
-                                        <tr>
-                                            <td class="text-start"><strong>Quantity:</strong></td>
-                                            <td class="text-start">@ViewBag.Qty</td>
-                                        </tr>
-                                    }
-                                </table>
+    <div class="block-content">
+        <div class="tab-content">
+            <!-- Single Generate Tab -->
+            <div class="tab-pane fade @(ViewBag.IsBatch != true ? "show active" : "")" id="single-generate" role="tabpanel">
+                <div class="row">
+                    <!-- Form Input -->
+                    <div class="col-lg-6">
+                        <div class="block block-rounded">
+                            <div class="block-header block-header-default">
+                                <h3 class="block-title">
+                                    <i class="fa fa-plus-circle me-1"></i>
+                                    Input Data Barang
+                                </h3>
+                            </div>
+                            <div class="block-content">
+                                <form method="post" asp-action="GenerateQR">
+                                    <input type="hidden" name="generateMode" value="single">
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label" for="namaBarang">Nama Barang <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="namaBarang" name="namaBarang" 
+                                               value="@ViewBag.PreNamaBarang" placeholder="Masukkan nama barang" required>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label" for="nomorAsset">Nomor Asset</label>
+                                        <input type="text" class="form-control" id="nomorAsset" name="nomorAsset" 
+                                               value="@ViewBag.PreNomorAsset" placeholder="Masukkan nomor asset (opsional)">
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label" for="kategoriBarang">Kategori Barang <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="kategoriBarang" name="kategoriBarang" required>
+                                            <option value="">Pilih Kategori...</option>
+                                            @if (ViewBag.Categories != null)
+                                            {
+                                                @foreach (var category in ViewBag.Categories)
+                                                {
+                                                    @if (ViewBag.PreKategoriBarang?.ToString() == category.KategoriBarang)
+                                                    {
+                                                        <option value="@category.KategoriBarang" selected="selected">@category.KategoriBarang</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@category.KategoriBarang">@category.KategoriBarang</option>
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label" for="kodeBarang">Kode Barang</label>
+                                        <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" 
+                                               value="@ViewBag.PreKodeBarang" readonly disabled>
+                                        <div class="form-text text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            Kode barang akan otomatis diisi berdasarkan kategori yang dipilih
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label" for="qty">Quantity <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="qty" name="qty" 
+                                               value="1" min="1" max="1" required>
+                                        <div class="form-text text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            Single generate hanya untuk 1 item
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="block-content block-content-full text-end bg-body-light">
+                                        @* <a href="@Url.Action("Index", "Asset")" class="btn btn-secondary me-1">
+                                            <i class="fa fa-times me-1"></i> Batal
+                                        </a> *@
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-qrcode me-1"></i> Generate QR Code
+                                        </button>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="d-flex flex-column flex-md-row gap-3 mt-4 mb-4 justify-content-center">
-                        <a href="@Url.Action("PrintLabel", "Asset", new { 
-                            namaBarang = ViewBag.NamaBarang, 
-                            nomorAsset = ViewBag.NomorAsset, 
-                            kategoriBarang = ViewBag.KategoriBarang, 
-                            kodeBarang = ViewBag.KodeBarang,
-                            qty = ViewBag.Qty,
-                            qrData = ViewBag.QRData 
-                        })" class="btn btn-success btn-lg px-4 py-2" target="_blank">
-                            <i class="fa fa-print me-2"></i> Print Label
-                        </a>
-                        <button type="button" class="btn btn-primary btn-lg px-4 py-2" onclick="downloadLabel()">
-                            <i class="fa fa-download me-2"></i> Download Label
-                        </button>
+                    <!-- QR Code Result for Single -->
+                    <div class="col-lg-6">
+                        @if (ViewBag.IsBatch != true && ViewBag.QRData != null)
+                        {
+                            <div class="block block-rounded">
+                                <div class="block-header block-header-default">
+                                    <h3 class="block-title">
+                                        <i class="fa fa-qrcode me-1"></i>
+                                        QR Code Result
+                                    </h3>
+                                </div>
+                                <div class="block-content text-center">
+                                    <div class="mb-3">
+                                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=@(System.Web.HttpUtility.UrlEncode(ViewBag.QRData?.ToString() ?? ""))" 
+                                             alt="QR Code" class="img-fluid border" style="max-width: 300px;" />
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <div class="bg-light p-3 rounded">
+                                                <h5 class="mb-2">Informasi Barang:</h5>
+                                                <table class="table table-borderless mb-0">
+                                                    <tr>
+                                                        <td class="text-start"><strong>Nama Barang:</strong></td>
+                                                        <td class="text-start">@ViewBag.NamaBarang</td>
+                                                    </tr>
+                                                    @if (!string.IsNullOrEmpty(ViewBag.NomorAsset))
+                                                    {
+                                                        <tr>
+                                                            <td class="text-start"><strong>Nomor Asset:</strong></td>
+                                                            <td class="text-start">@ViewBag.NomorAsset</td>
+                                                        </tr>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(ViewBag.KategoriBarang))
+                                                    {
+                                                        <tr>
+                                                            <td class="text-start"><strong>Kategori Barang:</strong></td>
+                                                            <td class="text-start">@ViewBag.KategoriBarang</td>
+                                                        </tr>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(ViewBag.KodeBarang))
+                                                    {
+                                                        <tr>
+                                                            <td class="text-start"><strong>Kode Barang:</strong></td>
+                                                            <td class="text-start">@ViewBag.KodeBarang</td>
+                                                        </tr>
+                                                    }
+                                                    @if (ViewBag.Qty != null)
+                                                    {
+                                                        <tr>
+                                                            <td class="text-start"><strong>Quantity:</strong></td>
+                                                            <td class="text-start">@ViewBag.Qty</td>
+                                                        </tr>
+                                                    }
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex flex-column flex-md-row gap-3 mt-4 mb-4 justify-content-center">
+                                        <a href="@Url.Action("PrintLabel", "Asset", new { 
+                                            namaBarang = ViewBag.NamaBarang, 
+                                            nomorAsset = ViewBag.NomorAsset, 
+                                            kategoriBarang = ViewBag.KategoriBarang, 
+                                            kodeBarang = ViewBag.KodeBarang,
+                                            qty = ViewBag.Qty,
+                                            qrData = ViewBag.QRData 
+                                        })" class="btn btn-success btn-lg px-4 py-2" target="_blank">
+                                            <i class="fa fa-print me-2"></i> Print Label
+                                        </a>
+                                        <button type="button" class="btn btn-primary btn-lg px-4 py-2" onclick="downloadLabel()">
+                                            <i class="fa fa-download me-2"></i> Download Label
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="block block-rounded">
+                                <div class="block-header block-header-default">
+                                    <h3 class="block-title">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        Petunjuk
+                                    </h3>
+                                </div>
+                                <div class="block-content">
+                                    <div class="alert alert-info">
+                                        <h5><i class="fa fa-info-circle me-1"></i> Cara Menggunakan:</h5>
+                                        <ol class="mb-0">
+                                            <li>Isi form di sebelah kiri dengan data barang</li>
+                                            <li>Nama barang dan kategori wajib diisi</li>
+                                            <li>Klik tombol "Generate QR Code"</li>
+                                            <li>QR Code akan muncul di area ini</li>
+                                            <li>Anda bisa print label atau download QR Code</li>
+                                            <li>Tempel label ke barang untuk tracking</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
-        }
-        else
-        {
-            <div class="block block-rounded">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">
-                        <i class="fa fa-info-circle me-1"></i>
-                        Petunjuk
-                    </h3>
-                </div>
-                <div class="block-content">
-                    <div class="alert alert-info">
-                        <h5><i class="fa fa-info-circle me-1"></i> Cara Menggunakan:</h5>
-                        <ol class="mb-0">
-                            <li>Isi form di sebelah kiri dengan data barang</li>
-                            <li>Nama barang wajib diisi, field lain opsional</li>
-                            <li>Klik tombol "Generate QR Code"</li>
-                            <li>QR Code akan muncul di area ini</li>
-                            <li>Anda bisa print label atau download QR Code</li>
-                            <li>Tempel label ke barang untuk tracking</li>
-                        </ol>
+            
+            <!-- Batch Generate Tab -->
+            <div class="tab-pane fade @(ViewBag.IsBatch == true ? "show active" : "")" id="batch-generate" role="tabpanel">
+                <div class="row">
+                    <!-- Form Input -->
+                    <div class="col-lg-6">
+                        <div class="block block-rounded">
+                            <div class="block-header block-header-default">
+                                <h3 class="block-title">
+                                    <i class="fa fa-files-o me-1"></i>
+                                    Input Data Batch Generate
+                                </h3>
+                            </div>
+                            <div class="block-content">
+                                <form method="post" asp-action="GenerateQR">
+                                    <input type="hidden" name="generateMode" value="batch">
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label" for="batchNamaBarang">Nama Barang <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" id="batchNamaBarang" name="namaBarang" 
+                                               value="@(ViewBag.IsBatch == true ? ViewBag.NamaBarang : "")" placeholder="Masukkan nama barang" required>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label" for="batchNomorAsset">Nomor Asset Base</label>
+                                        <input type="text" class="form-control" id="batchNomorAsset" name="nomorAsset" 
+                                               value="@(ViewBag.IsBatch == true ? ViewBag.NomorAsset : "")" placeholder="Base nomor asset (akan ditambah sequence number)">
+                                        <div class="form-text text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            Contoh: AST001 akan menjadi AST001-001, AST001-002, dst.
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label" for="batchKategoriBarang">Kategori Barang <span class="text-danger">*</span></label>
+                                        <select class="form-control" id="batchKategoriBarang" name="kategoriBarang" required>
+                                            <option value="">Pilih Kategori...</option>
+                                            @if (ViewBag.Categories != null)
+                                            {
+                                                @foreach (var category in ViewBag.Categories)
+                                                {
+                                                    @if (ViewBag.IsBatch == true && ViewBag.KategoriBarang?.ToString() == category.KategoriBarang)
+                                                    {
+                                                        <option value="@category.KategoriBarang" selected="selected">@category.KategoriBarang</option>
+                                                    }
+                                                    else
+                                                    {
+                                                        <option value="@category.KategoriBarang">@category.KategoriBarang</option>
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label" for="batchQty">Jumlah Label <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="batchQty" name="qty" 
+                                               value="@(ViewBag.IsBatch == true ? ViewBag.Qty : "")" min="2" max="100" required>
+                                        <div class="form-text text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            Masukkan jumlah label QR yang akan digenerate (2-100)
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="block-content block-content-full text-end bg-body-light">
+                                        @* <a href="@Url.Action("Index", "Asset")" class="btn btn-secondary me-1">
+                                            <i class="fa fa-times me-1"></i> Batal
+                                        </a> *@
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa fa-files-o me-1"></i> Generate Batch QR
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="alert alert-warning">
-                        <h6><i class="fa fa-exclamation-triangle me-1"></i> Tips:</h6>
-                        <ul class="mb-0">
-                            <li>Gunakan nama barang yang jelas dan spesifik</li>
-                            <li>Nomor asset membantu identifikasi unik</li>
-                            <li>Lokasi memudahkan pencarian barang</li>
-                            <li>QR Code dapat di-scan menggunakan fitur scan yang tersedia</li>
-                        </ul>
+                    <!-- Batch Result -->
+                    <div class="col-lg-6">
+                        @if (ViewBag.IsBatch == true && ViewBag.BatchData != null)
+                        {
+                            <div class="block block-rounded">
+                                <div class="block-header block-header-default">
+                                    <h3 class="block-title">
+                                        <i class="fa fa-files-o me-1"></i>
+                                        Batch QR Code Result
+                                    </h3>
+                                </div>
+                                <div class="block-content">
+                                    <div class="alert alert-success">
+                                        <i class="fa fa-check-circle me-1"></i>
+                                        <strong>Berhasil!</strong> @ViewBag.Qty label QR code telah digenerate.
+                                    </div>
+                                    
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <div class="bg-light p-3 rounded">
+                                                <h5 class="mb-2">Informasi Batch:</h5>
+                                                <table class="table table-borderless mb-0">
+                                                    <tr>
+                                                        <td class="text-start"><strong>Nama Barang:</strong></td>
+                                                        <td class="text-start">@ViewBag.NamaBarang</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-start"><strong>Kategori Barang:</strong></td>
+                                                        <td class="text-start">@ViewBag.KategoriBarang</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-start"><strong>Jumlah Label:</strong></td>
+                                                        <td class="text-start">@ViewBag.Qty buah</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="text-start"><strong>Kode Base:</strong></td>
+                                                        <td class="text-start">@ViewBag.KodeBarang</td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <h6><i class="fa fa-list me-1"></i> Preview Kode Barang:</h6>
+                                        <div class="row">
+                                            @{
+                                                var batchData = ViewBag.BatchData as List<Dictionary<string, object>>;
+                                                int displayCount = Math.Min(batchData?.Count ?? 0, 5);
+                                            }
+                                            @for (int i = 0; i < displayCount; i++)
+                                            {
+                                                var item = batchData?[i];
+                                                if (item != null)
+                                                {
+                                                    <div class="col-12 mb-1">
+                                                        <small class="text-muted">
+                                                            @($"{i + 1}. {item["kodeBarang"]}")
+                                                        </small>
+                                                    </div>
+                                                }
+                                            }
+                                            @if (batchData?.Count > 5)
+                                            {
+                                                <div class="col-12">
+                                                    <small class="text-muted">... dan @(batchData.Count - 5) item lainnya</small>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <h6><i class="fa fa-qrcode me-1"></i> Preview QR Codes (3 pertama):</h6>
+                                        <div class="row">
+                                            @{
+                                                int qrDisplayCount = Math.Min(batchData?.Count ?? 0, 3);
+                                            }
+                                            @for (int i = 0; i < qrDisplayCount; i++)
+                                            {
+                                                var item = batchData?[i];
+                                                if (item != null)
+                                                {
+                                                    var qrDataJson = System.Text.Json.JsonSerializer.Serialize(item);
+                                                    <div class="col-4 mb-2 text-center">
+                                                        <div class="border p-2 rounded">
+                                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=@(System.Web.HttpUtility.UrlEncode(qrDataJson))" 
+                                                                 alt="QR Code @(i + 1)" class="img-fluid mb-1" style="max-width: 80px;" />
+                                                            <br>
+                                                            <small class="text-muted">@item["kodeBarang"]</small>
+                                                        </div>
+                                                    </div>
+                                                }
+                                            }
+                                            @if (batchData?.Count > 3)
+                                            {
+                                                <div class="col-12 text-center">
+                                                    <small class="text-muted">... dan @(batchData.Count - 3) QR code lainnya akan diprint</small>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-flex flex-column flex-md-row gap-3 mt-4 mb-4 justify-content-center">
+                                        <a href="@Url.Action("PrintLabel", "Asset", new { 
+                                            namaBarang = ViewBag.NamaBarang, 
+                                            nomorAsset = ViewBag.NomorAsset, 
+                                            kategoriBarang = ViewBag.KategoriBarang, 
+                                            kodeBarang = ViewBag.KodeBarang,
+                                            qty = ViewBag.Qty,
+                                            batchData = System.Text.Json.JsonSerializer.Serialize(ViewBag.BatchData)
+                                        })" class="btn btn-success btn-lg px-4 py-2" target="_blank">
+                                            <i class="fa fa-print me-2"></i> Print All Labels (@ViewBag.Qty)
+                                        </a>
+                                        <button type="button" class="btn btn-primary btn-lg px-4 py-2" onclick="downloadBatchLabels()">
+                                            <i class="fa fa-download me-2"></i> Download All Labels
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="block block-rounded">
+                                <div class="block-header block-header-default">
+                                    <h3 class="block-title">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        Petunjuk Batch Generate
+                                    </h3>
+                                </div>
+                                <div class="block-content">
+                                    <div class="alert alert-info">
+                                        <h5><i class="fa fa-info-circle me-1"></i> Cara Menggunakan Batch Generate:</h5>
+                                        <ol class="mb-0">
+                                            <li>Isi nama barang yang sama untuk semua label</li>
+                                            <li>Pilih kategori barang</li>
+                                            <li>Isi nomor asset base (opsional)</li>
+                                            <li>Tentukan jumlah label yang akan digenerate (2-100)</li>
+                                            <li>Sistem akan membuat kode barang unik untuk setiap label</li>
+                                            <li>Klik "Generate Batch QR" untuk memproses</li>
+                                            <li>Print semua label sekaligus untuk ditempel ke barang</li>
+                                        </ol>
+                                    </div>
+                                    
+                                    <div class="alert alert-warning">
+                                        <h6><i class="fa fa-exclamation-triangle me-1"></i> Catatan Penting:</h6>
+                                        <ul class="mb-0">
+                                            <li>Setiap label akan memiliki kode barang yang unik</li>
+                                            <li>Data tidak akan langsung tersimpan ke database</li>
+                                            <li>Label harus di-scan satu per satu setelah ditempel ke barang</li>
+                                            <li>Pastikan jumlah label sesuai dengan jumlah barang fisik</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
-        }
+        </div>
     </div>
 </div>
 
-<!-- QR Code Library -->
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-<!-- SweetAlert2 -->
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script>
-// Auto-generate kode barang function
-async function generateItemCode(kategoriBarang) {
-    try {
-        const response = await fetch('/api/AssetIn/GenerateItemCode', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                KategoriBarang: kategoriBarang
-            })
-        });
-
-        const result = await response.json();
-        return result;
-    } catch (error) {
-        console.error('Error generating item code:', error);
-        return { success: false, message: 'Error generate kode barang' };
+function downloadLabel() {
+    var namaBarang = '@ViewBag.NamaBarang';
+    var nomorAsset = '@ViewBag.NomorAsset';
+    var kategoriBarang = '@ViewBag.KategoriBarang';
+    var kodeBarang = '@ViewBag.KodeBarang';
+    var qty = '@ViewBag.Qty';
+    var qrData = '@ViewBag.QRData';
+    
+    if (!qrData) {
+        alert('QR Data tidak tersedia untuk didownload.');
+        return;
     }
+    
+    // Create canvas for label generation
+    var labelCanvas = document.createElement('canvas');
+    labelCanvas.width = 450;
+    labelCanvas.height = 300;
+    var ctx = labelCanvas.getContext('2d');
+    
+    // Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+    
+    // Border
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(2, 2, labelCanvas.width - 4, labelCanvas.height - 4);
+    
+    // Header background
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(2, 2, labelCanvas.width - 4, 40);
+    
+    // Header border
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(2, 42);
+    ctx.lineTo(labelCanvas.width - 2, 42);
+    ctx.stroke();
+    
+    // Header text
+    ctx.fillStyle = '#333333';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('ASSET MANAGEMENT', labelCanvas.width/2, 20);
+    ctx.font = '12px Arial';
+    ctx.fillText('Asset Tracking Label', labelCanvas.width/2, 35);
+    
+    // QR Code placeholder (would need actual QR generation library)
+    ctx.strokeStyle = '#dddddd';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(15, 55, 120, 120);
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(15, 55, 120, 120);
+    ctx.fillStyle = '#666666';
+    ctx.font = '10px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR CODE', 75, 115);
+    
+    // Asset info
+    ctx.fillStyle = '#333333';
+    ctx.textAlign = 'left';
+    var startX = 150;
+    var currentY = 70;
+    var lineHeight = 18;
+    
+    // Nama Barang
+    ctx.font = 'bold 12px Arial';
+    ctx.fillText('Nama Barang:', startX, currentY);
+    ctx.font = '11px Arial';
+    ctx.fillText(namaBarang, startX + 90, currentY);
+    currentY += lineHeight;
+    
+    // Nomor Asset (if exists)
+    if (nomorAsset && nomorAsset.trim() !== '') {
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('Nomor Asset:', startX, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(nomorAsset, startX + 80, currentY);
+        currentY += lineHeight;
+    }
+    
+    // Kategori Barang (if exists)
+    if (kategoriBarang && kategoriBarang.trim() !== '') {
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('Kategori:', startX, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(kategoriBarang, startX + 80, currentY);
+        currentY += lineHeight;
+    }
+    
+    // Kode Barang (if exists)
+    if (kodeBarang && kodeBarang.trim() !== '') {
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('Kode Barang:', startX, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(kodeBarang, startX + 80, currentY);
+        currentY += lineHeight;
+    }
+    
+    // Quantity (if exists)
+    if (qty && qty.trim() !== '' && qty !== '0') {
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('Quantity:', startX, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(qty, startX + 80, currentY);
+        currentY += lineHeight;
+    }
+    
+    // Generated timestamp di sebelah kanan atas
+    ctx.font = '9px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#666666';
+    var now = new Date();
+    var dateStr = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' ' + 
+                 now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
+    ctx.fillText('Generated: ' + dateStr + ' | Scan', labelCanvas.width - 15, 65);
+    ctx.fillText('QR code untuk detail asset', labelCanvas.width - 15, 77);
+    
+    // Footer background
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(2, labelCanvas.height - 30, labelCanvas.width - 4, 28);
+    
+    // Footer border
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(2, labelCanvas.height - 30);
+    ctx.lineTo(labelCanvas.width - 2, labelCanvas.height - 30);
+    ctx.stroke();
+    
+    // Footer text
+    ctx.fillStyle = '#666666';
+    ctx.font = '9px Arial';
+    ctx.textAlign = 'center';
+    var now = new Date();
+    var footerDateStr = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' ' + 
+                       now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
+    ctx.fillText('Generated: ' + footerDateStr + ' | Scan QR code untuk detail asset', labelCanvas.width/2, labelCanvas.height - 15);
+    
+    // Download
+    labelCanvas.toBlob(function(blob) {
+        var url = URL.createObjectURL(blob);
+        var link = document.createElement('a');
+        link.href = url;
+        var timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        link.download = 'Label_' + namaBarang.replace(/[^a-zA-Z0-9]/g, '_') + '_' + timestamp + '.png';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    });
 }
 
-// Auto-generate item code when category changes
-$(document).ready(function() {
-    $('#kategoriBarang').on('change', async function() {
-        const kategoriBarang = $(this).val().trim();
-        if (kategoriBarang) {
-            // Temporarily enable the field to set value
-            $('#kodeBarang').prop('disabled', false);
-            
-            const result = await generateItemCode(kategoriBarang);
-            if (result.success) {
-                $('#kodeBarang').val(result.itemCode);
-                
-                // Show info message
-                Swal.fire({
-                    title: 'Kode Barang Otomatis',
-                    text: `Kode barang "${result.itemCode}" telah digenerate berdasarkan kategori "${kategoriBarang}"`,
-                    icon: 'info',
-                    timer: 3000,
-                    showConfirmButton: false
-                });
-            } else {
-                $('#kodeBarang').val('');
-            }
-            
-            // Disable the field again after setting value
-            $('#kodeBarang').prop('disabled', true);
-        } else {
-            // Clear kode barang if no category selected
-            $('#kodeBarang').prop('disabled', false);
-            $('#kodeBarang').val('');
-            $('#kodeBarang').prop('disabled', true);
-        }
-    });
-    
-    // Handle form submission to ensure kode barang is sent
-    $('form').on('submit', function(e) {
-        // Enable kode barang field temporarily for form submission
-        $('#kodeBarang').prop('disabled', false);
-        
-        // Set kategori value if it's selected but not in ViewBag
-        var selectedKategori = $('#kategoriBarang').val();
-        if (selectedKategori && !$('#kategoriBarang').find('option[value="' + selectedKategori + '"][selected]').length) {
-            $('#kategoriBarang').find('option[value="' + selectedKategori + '"]').prop('selected', true);
-        }
-    });
-});
-</script>
-
-<script>
-// QR Code sudah ditampilkan menggunakan external API
-
-function downloadLabel() {
-    @if (ViewBag.QRData != null)
+function downloadBatchLabels() {
+    @if (ViewBag.IsBatch == true && ViewBag.BatchData != null)
     {
         <text>
-        var qrData = '@Html.Raw(ViewBag.QRData)';
-        var namaBarang = '@ViewBag.NamaBarang';
-        var nomorAsset = '@ViewBag.NomorAsset';
-        var kodeBarang = '@ViewBag.KodeBarang';
-        var kategoriBarang = '@ViewBag.KategoriBarang';
-        var qty = '@ViewBag.Qty';
-        var timestamp = '@DateTime.Now.ToString("yyyyMMdd_HHmmss")';
+        const batchData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.BatchData));
+        const formData = new FormData();
+        formData.append('batchData', JSON.stringify(batchData));
         
-        // Create canvas for label
-        var labelCanvas = document.createElement('canvas');
-        var ctx = labelCanvas.getContext('2d');
+        // Create temporary link for download
+        const link = document.createElement('a');
+        link.href = '@Url.Action("DownloadBatchLabels", "Asset")';
+        link.style.display = 'none';
         
-        // Set canvas dimensions
-        labelCanvas.width = 450;
-        labelCanvas.height = 250;
+        // Create form for POST request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '@Url.Action("DownloadBatchLabels", "Asset")';
+        form.style.display = 'none';
         
-        // Background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'batchData';
+        input.value = JSON.stringify(batchData);
         
-        // Border
-        ctx.strokeStyle = '#333333';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(0, 0, labelCanvas.width, labelCanvas.height);
-        
-        // Header background
-        ctx.fillStyle = '#f8f9fa';
-        ctx.fillRect(2, 2, labelCanvas.width - 4, 40);
-        
-        // Header border
-        ctx.strokeStyle = '#333333';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(2, 42);
-        ctx.lineTo(labelCanvas.width - 2, 42);
-        ctx.stroke();
-        
-        // Header text
-        ctx.fillStyle = '#333333';
-        ctx.font = 'bold 16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText('ASSET MANAGEMENT', labelCanvas.width/2, 20);
-        
-        ctx.font = '12px Arial';
-        ctx.fillText('Asset Tracking Label', labelCanvas.width/2, 35);
-        
-        // Load QR code image from external API
-        var qrImg = new Image();
-        qrImg.crossOrigin = 'anonymous';
-        qrImg.onload = function() {
-            // Draw QR code on the left side
-            ctx.drawImage(qrImg, 15, 55, 120, 120);
-            
-            // Draw asset information on the right side
-            ctx.fillStyle = '#333333';
-            ctx.textAlign = 'left';
-            var startX = 150;
-            var startY = 65;
-            var lineHeight = 20;
-            var currentY = startY;
-            
-            // Nama Barang (always show)
-            ctx.font = 'bold 11px Arial';
-            ctx.fillText('Nama Barang:', startX, currentY);
-            ctx.font = '10px Arial';
-            var namaText = namaBarang.length > 22 ? namaBarang.substring(0, 22) + '...' : namaBarang;
-            ctx.fillText(namaText, startX + 80, currentY);
-            currentY += lineHeight;
-            
-            // Nomor Asset (if exists)
-            if (nomorAsset && nomorAsset.trim() !== '') {
-                ctx.font = 'bold 11px Arial';
-                ctx.fillText('Nomor Asset:', startX, currentY);
-                ctx.font = '10px Arial';
-                ctx.fillText(nomorAsset, startX + 80, currentY);
-                currentY += lineHeight;
-            }
-            
-            // Kategori (if exists)
-            if (kategoriBarang && kategoriBarang.trim() !== '') {
-                ctx.font = 'bold 11px Arial';
-                ctx.fillText('Kategori:', startX, currentY);
-                ctx.font = '10px Arial';
-                ctx.fillText(kategoriBarang, startX + 80, currentY);
-                currentY += lineHeight;
-            }
-            
-            // Kode Barang (if exists)
-            if (kodeBarang && kodeBarang.trim() !== '') {
-                ctx.font = 'bold 11px Arial';
-                ctx.fillText('Kode Barang:', startX, currentY);
-                ctx.font = '10px Arial';
-                ctx.fillText(kodeBarang, startX + 80, currentY);
-                currentY += lineHeight;
-            }
-            
-            // Quantity (if exists)
-            if (qty && qty.trim() !== '' && qty !== '0') {
-                ctx.font = 'bold 11px Arial';
-                ctx.fillText('Quantity:', startX, currentY);
-                ctx.font = '10px Arial';
-                ctx.fillText(qty, startX + 80, currentY);
-                currentY += lineHeight;
-            }
-            
-            // Generated timestamp di sebelah kanan atas
-            ctx.font = '9px Arial';
-            ctx.textAlign = 'right';
-            ctx.fillStyle = '#666666';
-            var now = new Date();
-            var dateStr = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' ' + 
-                         now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
-            ctx.fillText('Generated: ' + dateStr + ' | Scan', labelCanvas.width - 15, 65);
-            ctx.fillText('QR code untuk detail asset', labelCanvas.width - 15, 77);
-            
-            // Footer background
-            ctx.fillStyle = '#f8f9fa';
-            ctx.fillRect(2, labelCanvas.height - 30, labelCanvas.width - 4, 28);
-            
-            // Footer border
-            ctx.strokeStyle = '#333333';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(2, labelCanvas.height - 30);
-            ctx.lineTo(labelCanvas.width - 2, labelCanvas.height - 30);
-            ctx.stroke();
-            
-            // Footer text
-            ctx.fillStyle = '#666666';
-            ctx.font = '9px Arial';
-            ctx.textAlign = 'center';
-            var now = new Date();
-            var footerDateStr = now.toLocaleDateString('id-ID', {day: '2-digit', month: '2-digit', year: 'numeric'}) + ' ' + 
-                               now.toLocaleTimeString('id-ID', {hour: '2-digit', minute: '2-digit'});
-            ctx.fillText('Generated: ' + footerDateStr + ' | Scan QR code untuk detail asset', labelCanvas.width/2, labelCanvas.height - 15);
-            
-            // Download
-            labelCanvas.toBlob(function(blob) {
-                var url = URL.createObjectURL(blob);
-                var link = document.createElement('a');
-                link.href = url;
-                link.download = 'Label_' + namaBarang.replace(/[^a-zA-Z0-9]/g, '_') + '_' + timestamp + '.png';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
-            });
-        };
-        
-        // Set QR image source to external API
-        var encodedQRData = encodeURIComponent(qrData);
-        qrImg.src = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodedQRData;
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+        </text>
+    }
+    else
+    {
+        <text>
+        alert('Tidak ada data batch untuk didownload!');
         </text>
     }
 }
+
+// Auto-generate kode barang untuk single generate
+document.addEventListener('DOMContentLoaded', function() {
+    const kategoriSelect = document.getElementById('kategoriBarang');
+    const kodeBarangInput = document.getElementById('kodeBarang');
+    
+    if (kategoriSelect && kodeBarangInput) {
+        kategoriSelect.addEventListener('change', function() {
+            if (this.value) {
+                // Generate preview kode barang berdasarkan kategori (akan di-override oleh server)
+                let prefix = '';
+                switch (this.value.toUpperCase()) {
+                    case 'RND':
+                    case 'R&D':
+                    case 'RESEARCH AND DEVELOPMENT':
+                        prefix = 'RND';
+                        break;
+                    case 'SPARE PART':
+                    case 'SPAREPART':
+                    case 'SP':
+                        prefix = 'SPA';
+                        break;
+                    case 'ELEKTRONIK':
+                    case 'ELECTRONIC':
+                    case 'ELK':
+                        prefix = 'ELK';
+                        break;
+                    case 'FURNITURE':
+                    case 'FURNITUR':
+                    case 'FRN':
+                        prefix = 'FRN';
+                        break;
+                    case 'KENDARAAN':
+                    case 'VEHICLE':
+                    case 'VHC':
+                        prefix = 'VHC';
+                        break;
+                    case 'PERALATAN':
+                    case 'EQUIPMENT':
+                    case 'EQP':
+                        prefix = 'EQP';
+                        break;
+                    default:
+                        prefix = this.value.length >= 3 ? this.value.substring(0, 3).toUpperCase() : this.value.toUpperCase();
+                        break;
+                }
+                
+                kodeBarangInput.value = `${prefix}-XXX (akan di-generate otomatis)`;
+            } else {
+                kodeBarangInput.value = '';
+            }
+        });
+    }
+    
+    // Auto-generate untuk batch generate juga
+    const batchKategoriSelect = document.getElementById('batchKategoriBarang');
+    
+    if (batchKategoriSelect) {
+        batchKategoriSelect.addEventListener('change', function() {
+            // Untuk batch, kode akan di-generate di controller, ini hanya visual feedback
+            console.log('Kategori batch selected:', this.value);
+        });
+    }
+});
 </script>

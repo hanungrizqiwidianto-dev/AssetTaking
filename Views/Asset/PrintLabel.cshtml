@@ -1,6 +1,9 @@
 @{
     ViewData["Title"] = "Print Label";
     Layout = null; // Tidak menggunakan layout untuk print
+    
+    bool isBatch = ViewBag.IsBatch == true;
+    var batchData = ViewBag.BatchData as List<Dictionary<string, object>>;
 }
 
 <!DOCTYPE html>
@@ -19,11 +22,20 @@
         
         .label-container {
             width: 450px;
-            margin: 0 auto;
+            margin: 0 auto 20px auto;
             border: 2px solid #333;
             padding: 0;
             page-break-inside: avoid;
             background: white;
+        }
+        
+        .label-container.batch {
+            margin-bottom: 30px;
+            page-break-after: always;
+        }
+        
+        .label-container.batch:last-child {
+            page-break-after: avoid;
         }
         
         .label-header {
@@ -96,6 +108,16 @@
             text-align: center;
         }
         
+        .batch-info {
+            background: #e7f3ff;
+            border-top: 1px solid #b3d9ff;
+            padding: 5px 15px;
+            font-size: 10px;
+            color: #0066cc;
+            text-align: center;
+            font-weight: bold;
+        }
+        
         .print-button {
             position: fixed;
             top: 20px;
@@ -146,7 +168,7 @@
             
             .label-container {
                 border: 2px solid #333;
-                margin: 0;
+                margin: 0 0 20px 0;
                 width: auto;
                 max-width: 400px;
             }
@@ -164,61 +186,133 @@
     </button>
     
     <button class="print-button" onclick="window.print()">
-        🖨️ Print
+        🖨️ Print @(isBatch && batchData != null ? $"({batchData.Count} Labels)" : "")
     </button>
 
-    <div class="label-container">
-        <div class="label-header">
-            <div class="company-name">ASSET MANAGEMENT</div>
-            <div class="label-title">Asset Tracking Label</div>
-        </div>
-        
-        <div class="label-body">
-            <div class="qr-section">
-                <img class="qr-code" id="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=@(System.Web.HttpUtility.UrlEncode(ViewBag.QRData?.ToString() ?? ""))" alt="QR Code" />
-            </div>
+    @if (isBatch && batchData != null)
+    {
+        @for (int i = 0; i < batchData.Count; i++)
+        {
+            var item = batchData[i];
+            var qrDataJson = System.Text.Json.JsonSerializer.Serialize(item);
             
-            <div class="asset-info">
-                <div class="info-row">
-                    <span class="info-label">Nama Barang:</span>
-                    <span class="info-value">@(ViewBag.NamaBarang ?? "-")</span>
+            <div class="label-container batch">
+                <div class="label-header">
+                    <div class="company-name">ASSET MANAGEMENT</div>
+                    <div class="label-title">Asset Tracking Label</div>
                 </div>
                 
-                @if (!string.IsNullOrEmpty(ViewBag.NomorAsset))
-                {
-                    <div class="info-row">
-                        <span class="info-label">Nomor Asset:</span>
-                        <span class="info-value">@ViewBag.NomorAsset</span>
-                    </div>
-                }
+                <div class="batch-info">
+                    Batch @(i + 1) of @batchData.Count
+                </div>
                 
-                @if (!string.IsNullOrEmpty(ViewBag.KategoriBarang))
-                {
-                    <div class="info-row">
-                        <span class="info-label">Kategori:</span>
-                        <span class="info-value">@ViewBag.KategoriBarang</span>
+                <div class="label-body">
+                    <div class="qr-section">
+                        <img class="qr-code" src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=@(System.Web.HttpUtility.UrlEncode(qrDataJson))" alt="QR Code @(i + 1)" />
                     </div>
-                }
+                    
+                    <div class="asset-info">
+                        <div class="info-row">
+                            <span class="info-label">Nama Barang:</span>
+                            <span class="info-value">@(item.ContainsKey("namaBarang") ? item["namaBarang"]?.ToString() : "-")</span>
+                        </div>
+                        
+                        @if (item.ContainsKey("nomorAsset") && !string.IsNullOrEmpty(item["nomorAsset"]?.ToString()))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">Nomor Asset:</span>
+                                <span class="info-value">@item["nomorAsset"]</span>
+                            </div>
+                        }
+                        
+                        @if (item.ContainsKey("kategoriBarang") && !string.IsNullOrEmpty(item["kategoriBarang"]?.ToString()))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">Kategori:</span>
+                                <span class="info-value">@item["kategoriBarang"]</span>
+                            </div>
+                        }
+                        
+                        @if (item.ContainsKey("kodeBarang") && !string.IsNullOrEmpty(item["kodeBarang"]?.ToString()))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">Kode Barang:</span>
+                                <span class="info-value">@item["kodeBarang"]</span>
+                            </div>
+                        }
+                        
+                        <div class="info-row">
+                            <span class="info-label">Quantity:</span>
+                            <span class="info-value">@(item.ContainsKey("qty") ? item["qty"]?.ToString() : "1")</span>
+                        </div>
+                    </div>
+                </div>
                 
-                @if (!string.IsNullOrEmpty(ViewBag.KodeBarang))
-                {
-                    <div class="info-row">
-                        <span class="info-label">Kode Barang:</span>
-                        <span class="info-value">@ViewBag.KodeBarang</span>
-                    </div>
-                }
+                <div class="label-footer">
+                    Generated: @DateTime.Now.ToString("dd/MM/yyyy HH:mm") | Scan QR code untuk detail asset
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <!-- Single Label -->
+        <div class="label-container">
+            <div class="label-header">
+                <div class="company-name">ASSET MANAGEMENT</div>
+                <div class="label-title">Asset Tracking Label</div>
+            </div>
+            
+            <div class="label-body">
+                <div class="qr-section">
+                    <img class="qr-code" id="qr-image" src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=@(System.Web.HttpUtility.UrlEncode(ViewBag.QRData?.ToString() ?? ""))" alt="QR Code" />
+                </div>
                 
-                @if (ViewBag.Qty != null)
-                {
+                <div class="asset-info">
                     <div class="info-row">
-                        <span class="info-label">Quantity:</span>
-                        <span class="info-value">@ViewBag.Qty</span>
+                        <span class="info-label">Nama Barang:</span>
+                        <span class="info-value">@(ViewBag.NamaBarang ?? "-")</span>
                     </div>
-                }
-            </div>        <div class="label-footer">
-            Generated: @DateTime.Now.ToString("dd/MM/yyyy HH:mm") | Scan QR code untuk detail asset
+                    
+                    @if (!string.IsNullOrEmpty(ViewBag.NomorAsset))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">Nomor Asset:</span>
+                            <span class="info-value">@ViewBag.NomorAsset</span>
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(ViewBag.KategoriBarang))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">Kategori:</span>
+                            <span class="info-value">@ViewBag.KategoriBarang</span>
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(ViewBag.KodeBarang))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">Kode Barang:</span>
+                            <span class="info-value">@ViewBag.KodeBarang</span>
+                        </div>
+                    }
+                    
+                    @if (ViewBag.Qty != null)
+                    {
+                        <div class="info-row">
+                            <span class="info-label">Quantity:</span>
+                            <span class="info-value">@ViewBag.Qty</span>
+                        </div>
+                    }
+                </div>
+            </div>
+            
+            <div class="label-footer">
+                Generated: @DateTime.Now.ToString("dd/MM/yyyy HH:mm") | Scan QR code untuk detail asset
+            </div>
         </div>
-    </div>
+    }
 
     <script>
         // Auto print when page loads (optional)
