@@ -482,7 +482,12 @@ function downloadLabel() {
     var qrData = '@ViewBag.QRData';
     
     if (!qrData) {
-        alert('QR Data tidak tersedia untuk didownload.');
+        Swal.fire({
+            icon: 'error',
+            title: 'Error!',
+            text: 'QR Data tidak tersedia untuk didownload.',
+            confirmButtonText: 'OK'
+        });
         return;
     }
     
@@ -632,37 +637,171 @@ function downloadBatchLabels() {
     {
         <text>
         const batchData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(ViewBag.BatchData));
-        const formData = new FormData();
-        formData.append('batchData', JSON.stringify(batchData));
         
-        // Create temporary link for download
-        const link = document.createElement('a');
-        link.href = '@Url.Action("DownloadBatchLabels", "Asset")';
-        link.style.display = 'none';
+        if (!batchData || batchData.length === 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Peringatan!',
+                text: 'Tidak ada data batch untuk didownload!',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
         
-        // Create form for POST request
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '@Url.Action("DownloadBatchLabels", "Asset")';
-        form.style.display = 'none';
+        // Show progress indicator
+        const progressDiv = document.createElement('div');
+        progressDiv.innerHTML = `
+            <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                        background: white; padding: 20px; border: 2px solid #333; border-radius: 8px; 
+                        box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 9999;">
+                <div style="text-align: center;">
+                    <div style="margin-bottom: 10px;">Downloading Labels...</div>
+                    <div id="downloadProgress">0 / ${batchData.length}</div>
+                    <div style="width: 300px; height: 20px; background: #f0f0f0; border-radius: 10px; margin-top: 10px;">
+                        <div id="progressBar" style="height: 100%; background: #007bff; border-radius: 10px; width: 0%; transition: width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(progressDiv);
         
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'batchData';
-        input.value = JSON.stringify(batchData);
-        
-        form.appendChild(input);
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
+        // Download each label sequentially
+        downloadNextLabel(batchData, 0, progressDiv);
         </text>
     }
     else
     {
         <text>
-        alert('Tidak ada data batch untuk didownload!');
+        Swal.fire({
+            icon: 'warning',
+            title: 'Peringatan!',
+            text: 'Tidak ada data batch untuk didownload!',
+            confirmButtonText: 'OK'
+        });
         </text>
     }
+}
+
+function downloadNextLabel(batchData, index, progressDiv) {
+    if (index >= batchData.length) {
+        // All downloads complete
+        document.body.removeChild(progressDiv);
+        Swal.fire({
+            icon: 'success',
+            title: 'Download Selesai!',
+            text: `Semua ${batchData.length} label berhasil didownload`,
+            confirmButtonText: 'OK',
+            timer: 3000,
+            timerProgressBar: true
+        });
+        return;
+    }
+    
+    const item = batchData[index];
+    const qrDataJson = JSON.stringify(item);
+    
+    // Update progress
+    document.getElementById('downloadProgress').textContent = `${index + 1} / ${batchData.length}`;
+    document.getElementById('progressBar').style.width = `${((index + 1) / batchData.length) * 100}%`;
+    
+    // Create canvas for label generation (same as single generate)
+    var labelCanvas = document.createElement('canvas');
+    labelCanvas.width = 450;
+    labelCanvas.height = 300;
+    var ctx = labelCanvas.getContext('2d');
+    
+    // Background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, labelCanvas.width, labelCanvas.height);
+    
+    // Border
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(2, 2, labelCanvas.width - 4, labelCanvas.height - 4);
+    
+    // Header background
+    ctx.fillStyle = '#f8f9fa';
+    ctx.fillRect(2, 2, labelCanvas.width - 4, 40);
+    
+    // Header border
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(2, 42);
+    ctx.lineTo(labelCanvas.width - 2, 42);
+    ctx.stroke();
+    
+    // Header text
+    ctx.fillStyle = '#333333';
+    ctx.font = 'bold 16px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('ASSET MANAGEMENT', labelCanvas.width/2, 20);
+    ctx.font = '12px Arial';
+    ctx.fillText('PT. PAMAPERSADA NUSANTARA', labelCanvas.width/2, 35);
+    
+    // Create QR code image
+    var qrImg = new Image();
+    qrImg.crossOrigin = 'anonymous';
+    qrImg.onload = function() {
+        // Draw QR code
+        ctx.drawImage(qrImg, 20, 60, 120, 120);
+        
+        // Asset details
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#333333';
+        
+        // Right side details
+        var startY = 70;
+        var lineHeight = 20;
+        
+        ctx.fillText('Kode Barang:', 160, startY);
+        ctx.font = '12px Arial';
+        ctx.fillText(item.kodeBarang || '', 160, startY + 15);
+        
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('Nama Barang:', 160, startY + 35);
+        ctx.font = '12px Arial';
+        ctx.fillText(item.namaBarang || '', 160, startY + 50);
+        
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('Kategori:', 160, startY + 70);
+        ctx.font = '12px Arial';
+        ctx.fillText(item.kategori || '', 160, startY + 85);
+        
+        ctx.font = 'bold 14px Arial';
+        ctx.fillText('Lokasi:', 160, startY + 105);
+        ctx.font = '12px Arial';
+        ctx.fillText(item.lokasi || '', 160, startY + 120);
+        
+        // Bottom info
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('Tanggal: ' + new Date().toLocaleDateString('id-ID'), labelCanvas.width/2, 280);
+        
+        // Convert to blob and download
+        labelCanvas.toBlob(function(blob) {
+            var url = URL.createObjectURL(blob);
+            var link = document.createElement('a');
+            link.href = url;
+            var timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+            var filename = 'Label_' + (item.kodeBarang || 'Asset').replace(/[^a-zA-Z0-9]/g, '_') + '_' + timestamp + '.png';
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            // Download next label after short delay
+            setTimeout(function() {
+                downloadNextLabel(batchData, index + 1, progressDiv);
+            }, 500);
+        });
+    };
+    
+    // Generate QR code URL
+    var qrCodeUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=' + encodeURIComponent(qrDataJson);
+    qrImg.src = qrCodeUrl;
 }
 
 // Auto-generate kode barang untuk single generate

@@ -73,7 +73,7 @@ namespace AssetTaking.Controllers.Api
                 case "SPARE PART":
                 case "SPAREPART":
                 case "SP":
-                    prefix = "SP";
+                    prefix = "SPA";
                     break;
                 case "ELEKTRONIK":
                 case "ELECTRONIC":
