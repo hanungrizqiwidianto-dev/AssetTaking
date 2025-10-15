@@ -145,7 +145,7 @@ namespace AssetTaking.Controllers.Api
                     return Ok(new { 
                         isDuplicate = true,
                         existingQty = existingAsset.Qty,
-                        message = $"Asset dengan Nomor '{request.NomorAsset}' dan Kode '{request.KodeBarang}' sudah ada. Qty akan ditambahkan ke qty yang sudah ada ({existingAsset.Qty})."
+                        message = $"Asset dengan Nomor '{request.NomorAsset}' dan Kode '{request.KodeBarang}' sudah ada. Qty akan ditambahkan ke qty yang sudah ada."
                     });
                 }
 
@@ -219,10 +219,26 @@ namespace AssetTaking.Controllers.Api
 
                 if (existingAsset != null)
                 {
-                    // Update existing asset quantity
-                    existingAsset.Qty = (existingAsset.Qty ?? 0) + request.Qty;
-                    existingAsset.ModifiedAt = DateTime.Now;
-                    existingAsset.ModifiedBy = "system";
+                    // // Update existing asset quantity
+                    // existingAsset.Qty = (existingAsset.Qty ?? 0) + request.Qty;
+                    // existingAsset.ModifiedAt = DateTime.Now;
+                    // existingAsset.ModifiedBy = "system";
+                    
+                    var asset = new TblTAsset
+                    {
+                        NamaBarang = request.NamaBarang,
+                        TanggalMasuk = DateTime.Now,
+                        NomorAsset = request.NomorAsset,
+                        KodeBarang = request.KodeBarang,
+                        KategoriBarang = request.KategoriBarang,
+                        Qty = request.Qty,
+                        Foto = fotoPath,
+                        Status = (int)StatusAsset.In,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = "system"
+                    };
+
+                    _context.TblTAssets.Add(asset);
                     
                     // Also update the asset in record if it exists
                     var existingAssetIn = _context.TblTAssetIns
@@ -289,7 +305,7 @@ namespace AssetTaking.Controllers.Api
                 transaction.Commit();
 
                 string message = existingAsset != null 
-                    ? $"Asset berhasil diupdate. Qty ditambahkan ke asset yang sudah ada (Total qty sekarang: {existingAsset.Qty})"
+                    ? $"Asset berhasil diupdate. Qty ditambahkan ke asset yang sudah ada"
                     : "Asset In berhasil disimpan";
 
                 return Ok(new { Remarks = true, Message = message });
@@ -364,10 +380,26 @@ namespace AssetTaking.Controllers.Api
 
                 if (existingAsset != null)
                 {
-                    // Update existing asset quantity
-                    existingAsset.Qty = (existingAsset.Qty ?? 0) + request.Qty;
-                    existingAsset.ModifiedAt = DateTime.Now;
-                    existingAsset.ModifiedBy = "Scanner User";
+                    // // Update existing asset quantity
+                    // existingAsset.Qty = (existingAsset.Qty ?? 0) + request.Qty;
+                    // existingAsset.ModifiedAt = DateTime.Now;
+                    // existingAsset.ModifiedBy = "Scanner User";
+
+                    var asset = new TblTAsset
+                    {
+                        NamaBarang = request.NamaBarang,
+                        TanggalMasuk = DateTime.Now,
+                        NomorAsset = request.NomorAsset,
+                        KodeBarang = request.KodeBarang,
+                        KategoriBarang = request.KategoriBarang,
+                        Qty = request.Qty,
+                        Foto = fotoPath,
+                        Status = (int)StatusAsset.In,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = "Scanner User"
+                    };
+
+                    _context.TblTAssets.Add(asset);
                     
                     // Also update the asset in record if it exists
                     var existingAssetIn = _context.TblTAssetIns
@@ -401,7 +433,7 @@ namespace AssetTaking.Controllers.Api
 
                     return Ok(new { 
                         success = true, 
-                        message = $"Asset berhasil diupdate melalui scan. Qty ditambahkan ke asset yang sudah ada (Total qty sekarang: {existingAsset.Qty})",
+                        message = $"Asset berhasil diupdate melalui scan. Qty ditambahkan ke asset yang sudah ada",
                         data = new {
                             id = existingAsset.Id,
                             namaBarang = existingAsset.NamaBarang,
