@@ -93,10 +93,14 @@
     // Reset manual form function
     function resetManualForm() {
         $('#assetInForm')[0].reset();
+        // Reset checkbox to unchecked (automatic mode)
+        $('#manualKodeBarang').prop('checked', false);
         // Reset disabled fields properly
-        $('#kodeBarang').prop('disabled', false);
-        $('#kodeBarang').val('');
         $('#kodeBarang').prop('disabled', true);
+        $('#kodeBarang').prop('readonly', true);
+        $('#kodeBarang').val('');
+        // Reset info text
+        $('#kodeBarangInfo').html('<i class="fa fa-info-circle me-1"></i> Kode barang akan otomatis diisi berdasarkan kategori yang dipilih');
         // Clear image preview
         $('#imagePreview').hide();
         // Remove validation classes
@@ -106,7 +110,9 @@
     // Auto-generate item code when category changes
     $('#kategoriBarang').on('change', async function() {
         const kategoriBarang = $(this).val().trim();
-        if (kategoriBarang) {
+        const isManualInput = $('#manualKodeBarang').is(':checked');
+        
+        if (kategoriBarang && !isManualInput) {
             // Temporarily enable the field to set value
             $('#kodeBarang').prop('disabled', false);
             
@@ -128,11 +134,45 @@
             
             // Disable the field again after setting value
             $('#kodeBarang').prop('disabled', true);
-        } else {
+        } else if (!kategoriBarang) {
             // Clear kode barang if no category selected
-            $('#kodeBarang').prop('disabled', false);
-            $('#kodeBarang').val('');
-            $('#kodeBarang').prop('disabled', true);
+            if (!isManualInput) {
+                $('#kodeBarang').prop('disabled', false);
+                $('#kodeBarang').val('');
+                $('#kodeBarang').prop('disabled', true);
+            }
+        }
+    });
+
+    // Handle manual input checkbox toggle
+    $('#manualKodeBarang').on('change', function() {
+        const isManualInput = $(this).is(':checked');
+        const kodeBarangField = $('#kodeBarang');
+        const kodeBarangInfo = $('#kodeBarangInfo');
+        
+        if (isManualInput) {
+            // Enable manual input
+            kodeBarangField.prop('disabled', false);
+            kodeBarangField.prop('readonly', false);
+            kodeBarangField.focus();
+            
+            // Update info text
+            kodeBarangInfo.html('<i class="fa fa-edit me-1"></i> Anda dapat menginput kode barang secara manual');
+        } else {
+            // Disable manual input and switch back to automatic
+            kodeBarangField.prop('disabled', true);
+            kodeBarangField.prop('readonly', true);
+            
+            // Update info text
+            kodeBarangInfo.html('<i class="fa fa-info-circle me-1"></i> Kode barang akan otomatis diisi berdasarkan kategori yang dipilih');
+            
+            // Auto-generate code if category is selected
+            const kategoriBarang = $('#kategoriBarang').val();
+            if (kategoriBarang) {
+                $('#kategoriBarang').trigger('change');
+            } else {
+                kodeBarangField.val('');
+            }
         }
     });
 
