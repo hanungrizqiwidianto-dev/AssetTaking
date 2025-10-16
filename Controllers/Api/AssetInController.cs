@@ -236,13 +236,42 @@ namespace AssetTaking.Controllers.Api
             }
         }
 
+        private async Task<string?> GetStateFromId(string? stateId)
+        {
+            if (string.IsNullOrEmpty(stateId) || !int.TryParse(stateId, out int id))
+                return null;
+
+            var state = await _context.TblMStateCategories
+                .Where(x => x.Id == id)
+                .Select(x => x.State)
+                .FirstOrDefaultAsync();
+
+            return state;
+        }
+
+        private async Task<string?> ResolveState(AssetInRequest request)
+        {
+            // If State is provided directly, use it
+            if (!string.IsNullOrEmpty(request.State))
+                return request.State;
+
+            // If StateId is provided, resolve it to State name
+            if (!string.IsNullOrEmpty(request.StateId))
+                return await GetStateFromId(request.StateId);
+
+            return null;
+        }
+
         [HttpPost("Create")]
         public async Task<IActionResult> Create([FromForm] AssetInRequest request, IFormFile? fotoFile)
         {
             try
             {
+                // Resolve state from StateId if needed
+                var resolvedState = await ResolveState(request);
+                
                 // Validasi wajib isi State dan District In
-                if (string.IsNullOrEmpty(request.State))
+                if (string.IsNullOrEmpty(resolvedState))
                 {
                     return BadRequest(new { Remarks = false, Message = "State/Kondisi harus diisi" });
                 }
@@ -429,7 +458,7 @@ namespace AssetTaking.Controllers.Api
                         {
                             AssetId = savedAsset.AssetId, // Use AssetId instead of Id
                             SerialNumber = serialNumber,
-                            State = !string.IsNullOrEmpty(request.State) ? request.State : "In Use", // Default to "In Use" if not provided
+                            State = !string.IsNullOrEmpty(resolvedState) ? resolvedState : "In Use", // Default to "In Use" if not provided
                             Status = 1, // Active
                             Notes = request.ManualSerial ? "Manual input" : $"Auto-generated for {request.KategoriBarang} category",
                             CreatedAt = DateTime.Now,
@@ -534,8 +563,11 @@ namespace AssetTaking.Controllers.Api
                     });
                 }
 
+                // Resolve state from StateId if needed
+                var resolvedState = await ResolveState(request);
+
                 // Validasi wajib isi State dan District In untuk QR scan
-                if (string.IsNullOrEmpty(request.State))
+                if (string.IsNullOrEmpty(resolvedState))
                 {
                     return Ok(new { 
                         success = false, 
@@ -760,7 +792,7 @@ namespace AssetTaking.Controllers.Api
                         {
                             AssetId = savedAsset.AssetId, // Use AssetId (IDENTITY column)
                             SerialNumber = serialNumber,
-                            State = !string.IsNullOrEmpty(request.State) ? request.State : "In Use", // Use state from QR or default
+                            State = !string.IsNullOrEmpty(resolvedState) ? resolvedState : "In Use", // Use state from QR or default
                             Status = 1, // Active
                             Notes = request.ManualSerial ? "From QR scan (manual)" : $"From QR scan (auto-generated for {request.KategoriBarang})",
                             CreatedAt = DateTime.Now,
@@ -952,6 +984,7 @@ namespace AssetTaking.Controllers.Api
         public string? PoNumber { get; set; }
         public string? PoItem { get; set; }
         public string? State { get; set; }
+        public string? StateId { get; set; }
         public string? DstrctIn { get; set; }
         public bool ManualSerial { get; set; } = false;
         public string? SerialNumbers { get; set; }

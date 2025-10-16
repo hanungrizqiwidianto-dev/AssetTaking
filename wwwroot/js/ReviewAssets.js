@@ -477,11 +477,7 @@ $(document).ready(function () {
                     <div class="alert alert-danger mt-3">
                         <i class="fa fa-exclamation-triangle me-2"></i>
                         <strong>PERINGATAN!</strong><br>
-                        Operasi ini akan menghapus:<br>
-                        • <strong>SEMUA</strong> transaksi di TblTAssets<br>
-                        • <strong>SEMUA</strong> record di TblMAssetIn<br>
-                        • <strong>SEMUA</strong> record di TblMAssetOut<br>
-                        untuk asset ini
+                        Operasi ini akan menghapus semua data asset terkait.<br>
                     </div>
                     <p class="text-danger small"><strong>Operasi ini tidak dapat dibatalkan dan akan menghapus seluruh riwayat asset!</strong></p>
                 </div>
