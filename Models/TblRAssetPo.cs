@@ -13,6 +13,8 @@ public partial class TblRAssetPo
 
     public string? PoItem { get; set; }
 
+    public int? Status { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
     public string? CreatedBy { get; set; }

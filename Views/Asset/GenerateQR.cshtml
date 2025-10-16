@@ -62,6 +62,8 @@
                             <div class="block-content">
                                 <form method="post" asp-action="GenerateQR">
                                     <input type="hidden" name="generateMode" value="single">
+                                    <input type="hidden" name="fromReview" value="@(ViewBag.FromReview == true ? "true" : "false")">
+                                    <input type="hidden" name="fromSerial" value="@(ViewBag.FromSerial == true ? "true" : "false")">
                                     @if (!string.IsNullOrEmpty(ViewBag.PreSerialNumber))
                                     {
                                         <input type="hidden" name="serial" value="@ViewBag.PreSerialNumber">
@@ -100,24 +102,112 @@
                                         </select>
                                     </div>
                                     
-                                    <div class="mb-4">
-                                        <label class="form-label" for="kodeBarang">Kode Barang</label>
-                                        <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" 
-                                               value="@ViewBag.PreKodeBarang" readonly disabled>
-                                        <div class="form-text text-muted">
-                                            <i class="fa fa-info-circle me-1"></i>
-                                            Kode barang akan otomatis diisi berdasarkan kategori yang dipilih
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label class="form-label" for="state">State/Kondisi</label>
+                                                <select class="form-control" id="state" name="state">
+                                                    <option value="">Pilih State...</option>
+                                                    @if (ViewBag.States != null)
+                                                    {
+                                                        @foreach (var state in ViewBag.States)
+                                                        {
+                                                            @if (ViewBag.PreState?.ToString() == state.State)
+                                                            {
+                                                                <option value="@state.State" selected="selected">@state.State</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option value="@state.State">@state.State</option>
+                                                            }
+                                                        }
+                                                    }
+                                                </select>
+                                                <div class="form-text text-muted">
+                                                    <i class="fa fa-info-circle me-1"></i>
+                                                    Kondisi asset (akan disertakan dalam QR code)
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label class="form-label" for="district">District</label>
+                                                <select class="form-control" id="district" name="district">
+                                                    <option value="">Pilih District...</option>
+                                                    @if (ViewBag.Districts != null)
+                                                    {
+                                                        @foreach (var district in ViewBag.Districts)
+                                                        {
+                                                            @if (ViewBag.PreDistrict?.ToString() == district.District)
+                                                            {
+                                                                <option value="@district.District" selected="selected">@district.District</option>
+                                                            }
+                                                            else
+                                                            {
+                                                                <option value="@district.District">@district.District</option>
+                                                            }
+                                                        }
+                                                    }
+                                                </select>
+                                                <div class="form-text text-muted">
+                                                    <i class="fa fa-info-circle me-1"></i>
+                                                    Lokasi district (akan disertakan dalam QR code)
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     
                                     <div class="mb-4">
+                                        <label class="form-label" for="kodeBarang">Kode Barang</label>
+                                        @if (ViewBag.FromReview == true)
+                                        {
+                                            <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" 
+                                                   value="@ViewBag.PreKodeBarang" readonly>
+                                            <div class="form-text text-success">
+                                                <i class="fa fa-check-circle me-1"></i>
+                                                Menggunakan kode barang dari review: @ViewBag.PreKodeBarang
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" 
+                                                   value="@ViewBag.PreKodeBarang" readonly disabled>
+                                            <div class="form-text text-muted">
+                                                <i class="fa fa-info-circle me-1"></i>
+                                                Kode barang akan otomatis diisi berdasarkan kategori yang dipilih
+                                            </div>
+                                        }
+                                    </div>
+                                    
+                                    <div class="mb-4">
                                         <label class="form-label" for="qty">Quantity <span class="text-danger">*</span></label>
-                                        <input type="number" class="form-control" id="qty" name="qty" 
-                                               value="1" min="1" max="1" required>
-                                        <div class="form-text text-muted">
-                                            <i class="fa fa-info-circle me-1"></i>
-                                            Single generate hanya untuk 1 item
-                                        </div>
+                                        @if (ViewBag.FromSerial == true)
+                                        {
+                                            <input type="number" class="form-control" id="qty" name="qty" 
+                                                   value="1" min="1" max="1" readonly required>
+                                            <div class="form-text text-info">
+                                                <i class="fa fa-info-circle me-1"></i>
+                                                Generate dari serial specific hanya untuk 1 item
+                                            </div>
+                                        }
+                                        else if (ViewBag.FromReview == true && ViewBag.FromSerial != true)
+                                        {
+                                            <input type="number" class="form-control" id="qty" name="qty" 
+                                                   value="@ViewBag.PreQty" min="1" required>
+                                            <div class="form-text text-success">
+                                                <i class="fa fa-check-circle me-1"></i>
+                                                Quantity dari data review (dapat diubah sesuai kebutuhan)
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <input type="number" class="form-control" id="qty" name="qty" 
+                                                   value="1" min="1" max="1" required>
+                                            <div class="form-text text-muted">
+                                                <i class="fa fa-info-circle me-1"></i>
+                                                Single generate hanya untuk 1 item
+                                            </div>
+                                        }
                                     </div>
                                     
                                     <div class="mb-4">
@@ -286,6 +376,8 @@
                             <div class="block-content">
                                 <form method="post" asp-action="GenerateQR">
                                     <input type="hidden" name="generateMode" value="batch">
+                                    <input type="hidden" name="fromReview" value="@(ViewBag.FromReview == true ? "true" : "false")">
+                                    <input type="hidden" name="fromSerial" value="@(ViewBag.FromSerial == true ? "true" : "false")">
                                     
                                     <div class="mb-4">
                                         <label class="form-label" for="batchNamaBarang">Nama Barang <span class="text-danger">*</span></label>
@@ -322,6 +414,47 @@
                                                 }
                                             }
                                         </select>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label class="form-label" for="batchState">State/Kondisi</label>
+                                                <select class="form-control" id="batchState" name="state">
+                                                    <option value="">Pilih State...</option>
+                                                    @if (ViewBag.States != null)
+                                                    {
+                                                        @foreach (var state in ViewBag.States)
+                                                        {
+                                                            <option value="@state.State">@state.State</option>
+                                                        }
+                                                    }
+                                                </select>
+                                                <div class="form-text text-muted">
+                                                    <i class="fa fa-info-circle me-1"></i>
+                                                    Kondisi asset (akan disertakan dalam QR code)
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-4">
+                                                <label class="form-label" for="batchDistrict">District</label>
+                                                <select class="form-control" id="batchDistrict" name="district">
+                                                    <option value="">Pilih District...</option>
+                                                    @if (ViewBag.Districts != null)
+                                                    {
+                                                        @foreach (var district in ViewBag.Districts)
+                                                        {
+                                                            <option value="@district.District">@district.District</option>
+                                                        }
+                                                    }
+                                                </select>
+                                                <div class="form-text text-muted">
+                                                    <i class="fa fa-info-circle me-1"></i>
+                                                    Lokasi district (akan disertakan dalam QR code)
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                     
                                     <div class="mb-4">

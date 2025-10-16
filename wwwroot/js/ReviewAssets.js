@@ -542,7 +542,9 @@ $(document).ready(function () {
             nomor: nomorAsset || '',
             kode: kodeBarang || '',
             kategori: kategoriBarang || '',
-            qty: qty || '1'
+            qty: qty || '1',
+            fromReview: 'true',  // Flag untuk menandakan generate dari review
+            fromSerial: 'false'  // Flag untuk menandakan bukan dari serial specific
         });
         
         // Redirect ke halaman Generate QR dengan parameter

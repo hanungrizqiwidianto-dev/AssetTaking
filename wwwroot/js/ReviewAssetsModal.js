@@ -548,8 +548,10 @@ $(document).ready(function () {
             nomor: nomorAsset || '',
             kode: kodeBarang || '',
             kategori: kategoriBarang || '',
-            qty: qty || '1',
-            serial: serialNumber || ''  // Tambahan serial number
+            qty: '1',  // Dari serial specific, qty harus 1
+            serial: serialNumber || '',  // Tambahan serial number
+            fromReview: 'true',
+            fromSerial: 'true'  // Flag untuk menandakan generate dari serial specific
         });
         
         // Redirect ke halaman Generate QR dengan parameter

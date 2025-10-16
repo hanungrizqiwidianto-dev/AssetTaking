@@ -671,7 +671,7 @@ namespace AssetTaking.Controllers
             return RedirectToAction("AssetOut");
         }
 
-        public async Task<IActionResult> GenerateQR(string nama = "", string nomor = "", string kode = "", string kategori = "", int? qty = null, string serial = "")
+        public async Task<IActionResult> GenerateQR(string nama = "", string nomor = "", string kode = "", string kategori = "", int? qty = null, string serial = "", bool fromReview = false, bool fromSerial = false, string state = "", string district = "")
         {
             if (HttpContext.Session.GetString("Nrp") == null)
                 return RedirectToAction("Index", "Login");
@@ -682,7 +682,20 @@ namespace AssetTaking.Controllers
                 .OrderBy(x => x.KategoriBarang)
                 .ToListAsync();
             
+            // Get states and districts for dropdown
+            var states = await _context.TblMStateCategories
+                .Where(x => !string.IsNullOrEmpty(x.State))
+                .OrderBy(x => x.State)
+                .ToListAsync();
+                
+            var districts = await _context.TblMDstrctLocations
+                .Where(x => !string.IsNullOrEmpty(x.District))
+                .OrderBy(x => x.District)
+                .ToListAsync();
+            
             ViewBag.Categories = categories;
+            ViewBag.States = states;
+            ViewBag.Districts = districts;
             
             // Pass data to view for form pre-population
             ViewBag.PreNamaBarang = nama;
@@ -691,13 +704,17 @@ namespace AssetTaking.Controllers
             ViewBag.PreKategoriBarang = kategori;
             ViewBag.PreQty = qty ?? 1;
             ViewBag.PreSerialNumber = serial;
+            ViewBag.PreState = state;
+            ViewBag.PreDistrict = district;
+            ViewBag.FromReview = fromReview;
+            ViewBag.FromSerial = fromSerial;
             
             return View();
         }
 
         [HttpPost]
         [ActionName("GenerateQR")]
-        public async Task<IActionResult> GenerateQRPost(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string generateMode = "single", string serial = "")
+        public async Task<IActionResult> GenerateQRPost(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string generateMode = "single", string serial = "", bool fromReview = false, bool fromSerial = false, string state = "", string district = "")
         {
             try
             {
@@ -788,6 +805,8 @@ namespace AssetTaking.Controllers
                             ["kategoriBarang"] = kategoriBarang,
                             ["qty"] = 1,
                             ["serialNumber"] = serialNumber,
+                            ["state"] = state ?? "",
+                            ["district"] = district ?? "",
                             ["batchNumber"] = i,
                             ["totalBatch"] = qty.Value
                         };
@@ -809,16 +828,34 @@ namespace AssetTaking.Controllers
                 else
                 {
                     // Single generate mode
-                    if (qty != 1)
+                    // Validasi qty berdasarkan konteks:
+                    // 1. Jika dari serial specific (fromSerial=true): qty harus 1
+                    // 2. Jika dari review list (fromReview=true, fromSerial=false): qty sesuai data review
+                    // 3. Jika manual generate (fromReview=false): qty harus 1 untuk single mode
+                    
+                    if (fromSerial && qty != 1)
+                    {
+                        ViewBag.Error = "Untuk generate dari serial specific, quantity harus 1";
+                        return View();
+                    }
+                    else if (!fromReview && qty != 1)
                     {
                         ViewBag.Error = "Untuk single generate, quantity harus 1";
                         return View();
                     }
 
-                    // Generate kode barang if not provided
+                    // Generate kode barang jika tidak dari review dan kode kosong
                     if (string.IsNullOrEmpty(kodeBarang))
                     {
-                        kodeBarang = GenerateKodeBarang(kategoriBarang);
+                        if (fromReview)
+                        {
+                            ViewBag.Error = "Kode barang tidak valid dari data review";
+                            return View();
+                        }
+                        else
+                        {
+                            kodeBarang = GenerateKodeBarang(kategoriBarang);
+                        }
                     }
 
                     // Generate automatic serial number based on category - kecuali jika sudah ada dari parameter
@@ -832,7 +869,9 @@ namespace AssetTaking.Controllers
                         kodeBarang = kodeBarang,
                         kategoriBarang = kategoriBarang,
                         qty = qty.Value,
-                        serialNumber = serialNumber
+                        serialNumber = serialNumber,
+                        state = state ?? "",
+                        district = district ?? ""
                     };
                     
                     var qrData = System.Text.Json.JsonSerializer.Serialize(qrDataObject);
@@ -845,6 +884,8 @@ namespace AssetTaking.Controllers
                     ViewBag.Qty = qty;
                     ViewBag.SerialNumber = serialNumber;
                     ViewBag.QRData = qrData;
+                    ViewBag.FromReview = fromReview;
+                    ViewBag.FromSerial = fromSerial;
                     ViewBag.Success = "QR Code berhasil digenerate!";
 
                     return View();

@@ -11,7 +11,7 @@ public partial class TblRAssetSerial
 
     public string SerialNumber { get; set; } = null!;
 
-    public int? StateId { get; set; }
+    public string? State { get; set; }
 
     public int? Status { get; set; }
 
@@ -26,6 +26,4 @@ public partial class TblRAssetSerial
     public string? ModifiedBy { get; set; }
 
     public virtual TblTAsset Asset { get; set; } = null!;
-
-    public virtual TblMStateCategory? State { get; set; }
 }

@@ -560,15 +560,13 @@ namespace AssetTaking.Controllers.Api
                 }
 
                 var serialNumbers = await _context.TblRAssetSerials
-                    .Include(s => s.State)
                     .Where(s => s.AssetId == asset.AssetId)
                     .OrderBy(s => s.SerialNumber)
                     .Select(s => new
                     {
                         SerialId = s.SerialId,
                         SerialNumber = s.SerialNumber,
-                        StateId = s.StateId,
-                        StateName = s.State != null ? s.State.State : null,
+                        State = s.State,
                         Status = s.Status,
                         Notes = s.Notes,
                         CreatedAt = s.CreatedAt,
@@ -617,10 +615,159 @@ namespace AssetTaking.Controllers.Api
                 return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
             }
         }
+
+        [HttpGet("GetAvailableSerials/{assetId}")]
+        public async Task<IActionResult> GetAvailableSerials(int assetId)
+        {
+            try
+            {
+                // Find the asset to get its details
+                var asset = await _context.TblTAssets.FirstOrDefaultAsync(a => a.Id == assetId);
+                if (asset == null)
+                {
+                    return Ok(new List<object>());
+                }
+
+                // For asset in edit: get all serials with status 1 for the same asset group
+                // For asset out edit: get all serials with status 1 from the source asset in
+                if (asset.Status == (int)StatusAsset.In)
+                {
+                    // Get all available serials for asset in of the same group
+                    var serialNumbers = await _context.TblRAssetSerials
+                        .Where(s => s.Status == 1 && 
+                               _context.TblTAssets.Any(a => a.AssetId == s.AssetId && 
+                                                           a.NomorAsset == asset.NomorAsset && 
+                                                           a.KodeBarang == asset.KodeBarang && 
+                                                           a.Status == (int)StatusAsset.In))
+                        .OrderBy(s => s.SerialNumber)
+                        .Select(s => new
+                        {
+                            SerialId = s.SerialId,
+                            SerialNumber = s.SerialNumber,
+                            State = s.State,
+                            AssetId = s.AssetId,
+                            IsCurrentlyAssigned = s.AssetId == asset.AssetId
+                        })
+                        .ToListAsync();
+
+                    return Ok(serialNumbers);
+                }
+                else if (asset.Status == (int)StatusAsset.Out)
+                {
+                    // Get available serials from source asset in
+                    var sourceAssetIn = await _context.TblTAssetIns
+                        .FirstOrDefaultAsync(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
+
+                    if (sourceAssetIn != null)
+                    {
+                        var serialNumbers = await _context.TblRAssetSerials
+                            .Where(s => s.Status == 1 && 
+                                   _context.TblTAssets.Any(a => a.AssetId == s.AssetId && 
+                                                               a.AssetInId == sourceAssetIn.Id && 
+                                                               a.Status == (int)StatusAsset.In))
+                            .OrderBy(s => s.SerialNumber)
+                            .Select(s => new
+                            {
+                                SerialId = s.SerialId,
+                                SerialNumber = s.SerialNumber,
+                                State = s.State,
+                                AssetId = s.AssetId,
+                                IsCurrentlyAssigned = s.AssetId == asset.AssetId
+                            })
+                            .ToListAsync();
+
+                        return Ok(serialNumbers);
+                    }
+                }
+
+                return Ok(new List<object>());
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
+
+        [HttpGet("GetAvailablePos/{assetId}")]
+        public async Task<IActionResult> GetAvailablePos(int assetId)
+        {
+            try
+            {
+                // Find the asset to get its details
+                var asset = await _context.TblTAssets.FirstOrDefaultAsync(a => a.Id == assetId);
+                if (asset == null)
+                {
+                    return Ok(new List<object>());
+                }
+
+                // For asset in edit: get all POs for the same asset group
+                // For asset out edit: get all POs from the source asset in
+                if (asset.Status == (int)StatusAsset.In)
+                {
+                    // Get all POs for asset in of the same group
+                    var poNumbers = await _context.TblRAssetPos
+                        .Where(p => _context.TblTAssets.Any(a => a.AssetId == p.AssetId && 
+                                                                a.NomorAsset == asset.NomorAsset && 
+                                                                a.KodeBarang == asset.KodeBarang && 
+                                                                a.Status == (int)StatusAsset.In))
+                        .OrderBy(p => p.PoNumber)
+                        .ThenBy(p => p.PoItem)
+                        .Select(p => new
+                        {
+                            Id = p.Id,
+                            PoNumber = p.PoNumber,
+                            PoItem = p.PoItem,
+                            AssetId = p.AssetId,
+                            IsCurrentlyAssigned = p.AssetId == asset.AssetId
+                        })
+                        .ToListAsync();
+
+                    return Ok(poNumbers);
+                }
+                else if (asset.Status == (int)StatusAsset.Out)
+                {
+                    // Get available POs from source asset in
+                    var sourceAssetIn = await _context.TblTAssetIns
+                        .FirstOrDefaultAsync(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
+
+                    if (sourceAssetIn != null)
+                    {
+                        var poNumbers = await _context.TblRAssetPos
+                            .Where(p => _context.TblTAssets.Any(a => a.AssetId == p.AssetId && 
+                                                                    a.AssetInId == sourceAssetIn.Id && 
+                                                                    a.Status == (int)StatusAsset.In))
+                            .OrderBy(p => p.PoNumber)
+                            .ThenBy(p => p.PoItem)
+                            .Select(p => new
+                            {
+                                Id = p.Id,
+                                PoNumber = p.PoNumber,
+                                PoItem = p.PoItem,
+                                AssetId = p.AssetId,
+                                IsCurrentlyAssigned = p.AssetId == asset.AssetId
+                            })
+                            .ToListAsync();
+
+                        return Ok(poNumbers);
+                    }
+                }
+
+                return Ok(new List<object>());
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
     }
 
     public class UpdateAssetFromReviewRequest
     {
         public int Qty { get; set; }
+        public List<int>? SelectedSerials { get; set; }
+        public List<int>? SelectedPos { get; set; }
+        public string? State { get; set; }
+        public string? PoNumber { get; set; }
+        public string? PoItem { get; set; }
     }
 }

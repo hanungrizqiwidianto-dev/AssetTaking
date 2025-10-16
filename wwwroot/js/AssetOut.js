@@ -57,6 +57,7 @@
         if (selectedData && selectedData.id) {
             loadAssetDetailFromSelect2(selectedData);
             loadSerialNumbers(selectedData.id);
+            loadPoNumbers(selectedData.id);
             enableForm();
         } else {
             clearForm();
@@ -69,6 +70,7 @@
         clearForm();
         disableForm();
         $('#serialNumbersContainer').empty();
+        $('#poNumbersContainer').empty();
     });
 
     // Handle form reset
@@ -120,6 +122,18 @@
             return;
         }
 
+        // Validate PO numbers selection
+        const selectedPoValidation = $('.po-checkbox:checked');
+        if (selectedPoValidation.length !== qty) {
+            Swal.fire({
+                title: 'Error!',
+                text: `Pilih ${qty} PO numbers sesuai dengan quantity yang diinginkan`,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
         // Create FormData for file upload
         const formData = new FormData();
         formData.append('AssetInId', parseInt(assetInId));
@@ -138,6 +152,15 @@
         
         selectedSerials.forEach((serialId, index) => {
             formData.append(`SelectedSerials[${index}]`, serialId);
+        });
+
+        // Add selected PO numbers
+        const selectedPos = $('.po-checkbox:checked').map(function() {
+            return parseInt($(this).val());
+        }).get();
+        
+        selectedPos.forEach((poId, index) => {
+            formData.append(`SelectedPos[${index}]`, poId);
         });
         
         // Add file if selected
@@ -714,12 +737,91 @@
             return;
         }
         
-        // Update quantity field
-        $('#qty').val(selectedSerials.length);
+        updateFormValidation();
+    }
+
+    // Load PO numbers for selected asset
+    async function loadPoNumbers(assetId) {
+        try {
+            const response = await fetch(`/api/AssetOut/GetPoNumbers?assetId=${assetId}`);
+            const result = await response.json();
+            
+            if (result.success && result.data.length > 0) {
+                let html = '<div class="row">';
+                result.data.forEach((po, index) => {
+                    html += `
+                        <div class="col-md-6 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input po-checkbox" type="checkbox" 
+                                       value="${po.id}" id="po_${po.id}"
+                                       data-po-number="${po.poNumber}" data-po-item="${po.poItem}">
+                                <label class="form-check-label" for="po_${po.id}">
+                                    ${po.display}
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                $('#poNumbersContainer').html(html);
+                
+                // Handle checkbox changes
+                $('.po-checkbox').on('change', function() {
+                    updateSelectedPos();
+                });
+            } else {
+                $('#poNumbersContainer').html(
+                    '<div class="text-muted text-center"><i class="fa fa-info-circle me-1"></i>Tidak ada PO numbers tersedia</div>'
+                );
+            }
+        } catch (error) {
+            console.error('Error loading PO numbers:', error);
+            $('#poNumbersContainer').html(
+                '<div class="text-danger text-center"><i class="fa fa-exclamation-triangle me-1"></i>Error loading PO numbers</div>'
+            );
+        }
+    }
+
+    // Update selected PO numbers display and validation
+    function updateSelectedPos() {
+        const selectedPos = $('.po-checkbox:checked');
+        const maxQty = parseInt($('#qty').attr('max')) || 0;
+        
+        if (selectedPos.length > maxQty) {
+            // Uncheck the last checked item if exceeds max
+            selectedPos.last().prop('checked', false);
+            
+            Swal.fire({
+                title: 'Peringatan!',
+                text: `Maksimal ${maxQty} PO numbers yang dapat dipilih sesuai dengan quantity yang tersedia.`,
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+        
+        updateFormValidation();
+    }
+
+    // Update form validation based on serial numbers and PO numbers selection
+    function updateFormValidation() {
+        const selectedSerials = $('.serial-checkbox:checked');
+        const selectedPos = $('.po-checkbox:checked');
+        const currentQty = parseInt($('#qty').val()) || 0;
+        
+        // Update quantity field to match selected items
+        const serialsCount = selectedSerials.length;
+        const posCount = selectedPos.length;
+        
+        // Quantity should match both serial numbers and PO numbers count
+        if (serialsCount > 0 && posCount > 0 && serialsCount === posCount) {
+            $('#qty').val(serialsCount);
+        }
         
         // Enable/disable submit button
         const submitBtn = $('#assetOutForm button[type="submit"]');
-        if (selectedSerials.length > 0) {
+        if (serialsCount > 0 && posCount > 0 && serialsCount === posCount) {
             submitBtn.prop('disabled', false);
         } else {
             submitBtn.prop('disabled', true);

@@ -16,6 +16,4 @@ public partial class TblMStateCategory
     public DateTime? ModifiedAt { get; set; }
 
     public string? ModifiedBy { get; set; }
-
-    public virtual ICollection<TblRAssetSerial> TblRAssetSerials { get; set; } = new List<TblRAssetSerial>();
 }

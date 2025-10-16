@@ -21,8 +21,6 @@ public partial class TblTAssetIn
 
     public int? Qty { get; set; }
 
-    public string? State { get; set; }
-
     public DateTime? SentAt { get; set; }
 
     public string? SentBy { get; set; }

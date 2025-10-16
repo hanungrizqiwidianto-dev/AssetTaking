@@ -195,6 +195,7 @@ public partial class DbRndAssetTakingContext : DbContext
             entity.Property(e => e.PoNumber)
                 .HasMaxLength(50)
                 .HasColumnName("po_number");
+            entity.Property(e => e.Status).HasColumnName("status");
 
             entity.HasOne(d => d.Asset).WithMany(p => p.TblRAssetPos)
                 .HasForeignKey(d => d.AssetId)
@@ -231,17 +232,15 @@ public partial class DbRndAssetTakingContext : DbContext
             entity.Property(e => e.SerialNumber)
                 .HasMaxLength(50)
                 .HasColumnName("serial_number");
-            entity.Property(e => e.StateId).HasColumnName("state_id");
+            entity.Property(e => e.State)
+                .HasMaxLength(100)
+                .HasColumnName("state");
             entity.Property(e => e.Status).HasColumnName("status");
 
             entity.HasOne(d => d.Asset).WithMany(p => p.TblRAssetSerials)
                 .HasForeignKey(d => d.AssetId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__TBL_M_ASS__modif__778AC167");
-
-            entity.HasOne(d => d.State).WithMany(p => p.TblRAssetSerials)
-                .HasForeignKey(d => d.StateId)
-                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<TblRMasterKaryawanAll>(entity =>
@@ -510,10 +509,6 @@ public partial class DbRndAssetTakingContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("sent_by");
-            entity.Property(e => e.State)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("state");
         });
 
         modelBuilder.Entity<TblTAssetOut>(entity =>
@@ -573,10 +568,6 @@ public partial class DbRndAssetTakingContext : DbContext
                 .HasMaxLength(50)
                 .IsUnicode(false)
                 .HasColumnName("sent_by");
-            entity.Property(e => e.State)
-                .HasMaxLength(50)
-                .IsUnicode(false)
-                .HasColumnName("state");
         });
 
         modelBuilder.Entity<VwMAkse>(entity =>

@@ -84,6 +84,16 @@
                     <div class="row">
                         <div class="col-lg-6">
                             <div class="mb-4">
+                                <label class="form-label" for="kategoriBarang">Kategori Barang</label>
+                                <select class="form-control" id="kategoriBarang" name="kategoriBarang" required>
+                                    <option value="">Pilih Kategori...</option>
+                                    <option value="SPAREPART">Spare Part</option>
+                                    <option value="RnD">RnD Assets</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-4">
                                 <label class="form-label" for="kodeBarang">Kode Barang</label>
                                 <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" required readonly disabled>
                                 <div class="form-check mt-2">
@@ -96,16 +106,6 @@
                                     <i class="fa fa-info-circle me-1"></i>
                                     Kode barang akan otomatis diisi berdasarkan kategori yang dipilih
                                 </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="kategoriBarang">Kategori Barang</label>
-                                <select class="form-control" id="kategoriBarang" name="kategoriBarang" required>
-                                    <option value="">Pilih Kategori...</option>
-                                    <option value="SPAREPART">Spare Part</option>
-                                    <option value="RnD">RnD Assets</option>
-                                </select>
                             </div>
                         </div>
                     </div>
@@ -282,16 +282,16 @@
                                         <input type="text" class="form-control" id="scan_namaBarang" name="namaBarang" readonly>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label" for="scan_kodeBarang">Kode Barang</label>
-                                        <input type="text" class="form-control" id="scan_kodeBarang" name="kodeBarang">
-                                    </div>
-                                    <div class="mb-3">
                                         <label class="form-label" for="scan_kategoriBarang">Kategori Barang</label>
                                         <select class="form-control" id="scan_kategoriBarang" name="kategoriBarang" required>
                                             <option value="">Pilih Kategori...</option>
                                             <option value="SPAREPART">Spare Part</option>
                                             <option value="RnD">RnD Assets</option>
                                         </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_kodeBarang">Kode Barang</label>
+                                        <input type="text" class="form-control" id="scan_kodeBarang" name="kodeBarang">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label" for="scan_qty">Quantity <span class="text-danger">*</span></label>

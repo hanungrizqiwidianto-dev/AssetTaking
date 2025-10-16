@@ -745,7 +745,11 @@
                     namaBarang: assetData.namaBarang || '',
                     kodeBarang: assetData.kodeBarang || '',
                     kategoriBarang: assetData.kategoriBarang || '',
-                    foto: assetData.foto || ''
+                    foto: assetData.foto || '',
+                    qty: assetData.qty || 1,
+                    state: assetData.state || '',
+                    district: assetData.district || '',
+                    serialNumber: assetData.serialNumber || ''
                 });
             } else {
                 throw new Error("Invalid QR format");
@@ -791,13 +795,31 @@
         $('#scan_kodeBarang').val(data.kodeBarang);
         $('#scan_kategoriBarang').val(data.kategoriBarang);
         $('#scan_foto').val(data.foto);
-        $('#scan_qty').val(1); // Default quantity
+        
+        // Use quantity from QR data, default to 1 if not specified
+        var qtyFromQR = data.qty || 1;
+        $('#scan_qty').val(qtyFromQR);
+        
+        // Handle state and district from QR data
+        if (data.state) {
+            $('#scan_state').val(data.state);
+        }
+        if (data.district) {
+            $('#scan_dstrctIn').val(data.district);
+        }
         
         // Handle serial number from QR data
         if (data.serialNumber) {
             $('#scan_manualSerial').prop('checked', true);
             $('#scan_manualSerial').trigger('change'); // Trigger the change event to show manual input
-            $('#scan_serialNumbers').val(data.serialNumber);
+            
+            // If qty > 1, check if we have multiple serial numbers
+            if (qtyFromQR > 1) {
+                // For multiple qty, we expect comma-separated serial numbers
+                $('#scan_serialNumbers').val(data.serialNumber);
+            } else {
+                $('#scan_serialNumbers').val(data.serialNumber);
+            }
         } else {
             $('#scan_manualSerial').prop('checked', false);
             $('#scan_manualSerial').trigger('change'); // Trigger the change event to hide manual input
