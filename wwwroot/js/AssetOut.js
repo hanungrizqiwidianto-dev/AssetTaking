@@ -1,6 +1,10 @@
 ﻿$(document).ready(function() {
     console.log("AssetOut.js loaded");
 
+    // Load states and districts
+    loadStates();
+    loadDistricts();
+
     // Image preview functionality for new upload
     $('#fotoFile').on('change', function(e) {
         const file = e.target.files[0];
@@ -52,6 +56,7 @@
         const selectedData = $(this).select2('data')[0];
         if (selectedData && selectedData.id) {
             loadAssetDetailFromSelect2(selectedData);
+            loadSerialNumbers(selectedData.id);
             enableForm();
         } else {
             clearForm();
@@ -63,6 +68,7 @@
     $('#assetSelect').on('select2:clear', function() {
         clearForm();
         disableForm();
+        $('#serialNumbersContainer').empty();
     });
 
     // Handle form reset
@@ -102,10 +108,37 @@
             return;
         }
 
+        // Validate serial numbers selection
+        const selectedSerialsValidation = $('.serial-checkbox:checked');
+        if (selectedSerialsValidation.length !== qty) {
+            Swal.fire({
+                title: 'Error!',
+                text: `Pilih ${qty} serial numbers sesuai dengan quantity yang diinginkan`,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
         // Create FormData for file upload
         const formData = new FormData();
         formData.append('AssetInId', parseInt(assetInId));
         formData.append('Qty', qty);
+        
+        // Add state and district
+        const state = $('#state').val();
+        const dstrctOut = $('#dstrctOut').val();
+        if (state) formData.append('StateId', state);
+        if (dstrctOut) formData.append('DstrctOut', dstrctOut);
+        
+        // Add selected serial numbers
+        const selectedSerials = $('.serial-checkbox:checked').map(function() {
+            return parseInt($(this).val());
+        }).get();
+        
+        selectedSerials.forEach((serialId, index) => {
+            formData.append(`SelectedSerials[${index}]`, serialId);
+        });
         
         // Add file if selected
         const fileInput = $('#fotoFile')[0];
@@ -575,4 +608,121 @@
         $('#uploadExcelBtn').prop('disabled', false);
         $('#excelFile').removeClass('is-invalid');
     });
+
+    // Load states from API
+    async function loadStates() {
+        try {
+            const response = await fetch('/api/AssetIn/GetStates');
+            const result = await response.json();
+            
+            if (result.success) {
+                const stateSelect = $('#state');
+                // Keep the first option (placeholder)
+                const placeholder = stateSelect.find('option:first');
+                stateSelect.empty().append(placeholder);
+                
+                // Add states from database
+                result.data.forEach(state => {
+                    stateSelect.append(`<option value="${state.value}">${state.text}</option>`);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading states:', error);
+        }
+    }
+
+    // Load districts from API
+    async function loadDistricts() {
+        try {
+            const response = await fetch('/api/AssetIn/GetDistricts');
+            const result = await response.json();
+            
+            if (result.success) {
+                const districtSelect = $('#dstrctOut');
+                // Keep the first option (placeholder)
+                const placeholder = districtSelect.find('option:first');
+                districtSelect.empty().append(placeholder);
+                
+                // Add districts from database
+                result.data.forEach(district => {
+                    districtSelect.append(`<option value="${district.value}">${district.text}</option>`);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading districts:', error);
+        }
+    }
+
+    // Load serial numbers for selected asset
+    async function loadSerialNumbers(assetId) {
+        try {
+            const response = await fetch(`/api/AssetOut/GetSerialNumbers?assetId=${assetId}`);
+            const result = await response.json();
+            
+            if (result.success && result.data.length > 0) {
+                let html = '<div class="row">';
+                result.data.forEach((serial, index) => {
+                    html += `
+                        <div class="col-md-4 mb-2">
+                            <div class="form-check">
+                                <input class="form-check-input serial-checkbox" type="checkbox" 
+                                       value="${serial.serialId}" id="serial_${serial.serialId}"
+                                       data-serial-number="${serial.serialNumber}">
+                                <label class="form-check-label" for="serial_${serial.serialId}">
+                                    ${serial.serialNumber}
+                                </label>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                
+                $('#serialNumbersContainer').html(html);
+                
+                // Handle checkbox changes
+                $('.serial-checkbox').on('change', function() {
+                    updateSelectedSerials();
+                });
+            } else {
+                $('#serialNumbersContainer').html(
+                    '<div class="text-muted text-center"><i class="fa fa-info-circle me-1"></i>Tidak ada serial numbers tersedia</div>'
+                );
+            }
+        } catch (error) {
+            console.error('Error loading serial numbers:', error);
+            $('#serialNumbersContainer').html(
+                '<div class="text-danger text-center"><i class="fa fa-exclamation-triangle me-1"></i>Error loading serial numbers</div>'
+            );
+        }
+    }
+
+    // Update selected serials display and validation
+    function updateSelectedSerials() {
+        const selectedSerials = $('.serial-checkbox:checked');
+        const maxQty = parseInt($('#qty').attr('max')) || 0;
+        
+        if (selectedSerials.length > maxQty) {
+            // Uncheck the last checked item if exceeds max
+            selectedSerials.last().prop('checked', false);
+            
+            Swal.fire({
+                title: 'Peringatan!',
+                text: `Maksimal ${maxQty} serial numbers yang dapat dipilih sesuai dengan quantity yang tersedia.`,
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+        
+        // Update quantity field
+        $('#qty').val(selectedSerials.length);
+        
+        // Enable/disable submit button
+        const submitBtn = $('#assetOutForm button[type="submit"]');
+        if (selectedSerials.length > 0) {
+            submitBtn.prop('disabled', false);
+        } else {
+            submitBtn.prop('disabled', true);
+        }
+    }
 });

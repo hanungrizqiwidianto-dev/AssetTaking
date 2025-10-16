@@ -9,7 +9,7 @@
 {
     <div class="alert alert-success alert-dismissible fade show" role="alert">
         <i class="fa fa-check-circle me-1"></i>
-        @Html.Raw(TempData["Success"].ToString().Replace("\n", "<br>"))
+        @Html.Raw(TempData["Success"]?.ToString()?.Replace("\n", "<br>") ?? "")
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
@@ -18,7 +18,7 @@
 {
     <div class="alert alert-warning alert-dismissible fade show" role="alert">
         <i class="fa fa-exclamation-triangle me-1"></i>
-        @Html.Raw(TempData["Warning"].ToString().Replace("\n", "<br>"))
+        @Html.Raw(TempData["Warning"]?.ToString()?.Replace("\n", "<br>") ?? "")
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
@@ -27,7 +27,7 @@
 {
     <div class="alert alert-danger alert-dismissible fade show" role="alert">
         <i class="fa fa-times-circle me-1"></i>
-        @Html.Raw(TempData["Error"].ToString().Replace("\n", "<br>"))
+        @Html.Raw(TempData["Error"]?.ToString()?.Replace("\n", "<br>") ?? "")
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
@@ -119,6 +119,83 @@
                         </div>
                         <div class="col-lg-6">
                             <div class="mb-4">
+                                <label class="form-label">Serial Numbers</label>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="manualSerial" name="manualSerial">
+                                    <label class="form-check-label" for="manualSerial">
+                                        <small>Input manual serial number</small>
+                                    </label>
+                                </div>
+                                <div id="autoSerialInfo" class="form-control bg-light" style="min-height: 38px; display: flex; align-items: center;">
+                                    <i class="fa fa-cog me-2 text-muted"></i>
+                                    <span class="text-muted">Akan dibuat otomatis berdasarkan kategori dan quantity</span>
+                                </div>
+                                <div id="manualSerialInput" style="display: none;">
+                                    <input type="text" class="form-control" id="serialNumbers" name="serialNumbers" placeholder="Masukkan serial number, pisahkan dengan koma jika ada multiple">
+                                </div>
+                                <div class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    <span id="serialHelpText">Serial numbers akan dibuat otomatis (contoh: RND12391) berdasarkan kategori yang dipilih</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label class="form-label" for="poNumber">PO Number</label>
+                                <input type="text" class="form-control" id="poNumber" name="poNumber" placeholder="Contoh: PO-2024-001">
+                                <div class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    Nomor Purchase Order dari pembelian asset
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label class="form-label" for="poItem">PO Item</label>
+                                <input type="text" class="form-control" id="poItem" name="poItem" placeholder="Contoh: 001, 002">
+                                <div class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    Nomor item dalam PO (opsional)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label class="form-label" for="state">State/Kondisi</label>
+                                <select class="form-control" id="state" name="state">
+                                    <option value="">Pilih State...</option>
+                                    <!-- Options akan diload dari API -->
+                                </select>
+                                <div class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    Kondisi/status asset saat ini
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <div class="mb-4">
+                                <label class="form-label" for="dstrctIn">District In</label>
+                                <select class="form-control" id="dstrctIn" name="dstrctIn">
+                                    <option value="">Pilih District...</option>
+                                    <!-- Options akan diload dari API -->
+                                </select>
+                                <div class="form-text text-muted">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    Lokasi district asset masuk
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-lg-6">
+                            <div class="mb-4">
                                 <label class="form-label" for="fotoFile">Foto Asset</label>
                                 <input type="file" class="form-control" id="fotoFile" name="fotoFile" accept="image/*">
                                 <div class="form-text text-muted">
@@ -129,6 +206,9 @@
                                     <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
                                 </div>
                             </div>
+                        </div>
+                        <div class="col-lg-6">
+                            <!-- Empty column for layout balance -->
                         </div>
                     </div>
 
@@ -216,6 +296,48 @@
                                     <div class="mb-3">
                                         <label class="form-label" for="scan_qty">Quantity <span class="text-danger">*</span></label>
                                         <input type="number" class="form-control" id="scan_qty" name="qty" min="1" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Serial Numbers</label>
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" id="scan_manualSerial" name="manualSerial">
+                                            <label class="form-check-label" for="scan_manualSerial">
+                                                <small>Input manual serial number</small>
+                                            </label>
+                                        </div>
+                                        <div id="scan_autoSerialInfo" class="form-control bg-light" style="min-height: 38px; display: flex; align-items: center;">
+                                            <i class="fa fa-cog me-2 text-muted"></i>
+                                            <span class="text-muted">Akan dibuat otomatis berdasarkan kategori dan quantity</span>
+                                        </div>
+                                        <div id="scan_manualSerialInput" style="display: none;">
+                                            <input type="text" class="form-control" id="scan_serialNumbers" name="serialNumbers" placeholder="Masukkan serial number, pisahkan dengan koma jika ada multiple">
+                                        </div>
+                                        <div class="form-text text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            <span id="scan_serialHelpText">Serial numbers akan dibuat otomatis (contoh: RND12391) berdasarkan kategori yang dipilih</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_poNumber">PO Number</label>
+                                        <input type="text" class="form-control" id="scan_poNumber" name="poNumber">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_poItem">PO Item</label>
+                                        <input type="text" class="form-control" id="scan_poItem" name="poItem">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_state">State/Kondisi</label>
+                                        <select class="form-control" id="scan_state" name="state">
+                                            <option value="">Pilih State...</option>
+                                            <!-- Options akan diload dari API -->
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_dstrctIn">District In</label>
+                                        <select class="form-control" id="scan_dstrctIn" name="dstrctIn">
+                                            <option value="">Pilih District...</option>
+                                            <!-- Options akan diload dari API -->
+                                        </select>
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label" for="scan_fotoFile">Foto Asset</label>

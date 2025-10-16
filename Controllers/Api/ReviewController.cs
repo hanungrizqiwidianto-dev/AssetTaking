@@ -22,9 +22,13 @@ namespace AssetTaking.Controllers.Api
             try
             {
                 var assets = _context.TblTAssets
+                    .Include(a => a.TblRAssetSerials)
+                    .Include(a => a.TblRAssetPos)
                     .GroupBy(a => new { a.KodeBarang, a.NomorAsset })
                     .Select(g => new
                     {
+                        Id = g.First().Id, // Add ID for reference
+                        AssetId = g.First().AssetId, // Add AssetId for serial number lookup
                         KodeBarang = g.Key.KodeBarang,
                         NomorAsset = g.Key.NomorAsset,
                         NamaBarang = g.First().NamaBarang,
@@ -36,6 +40,19 @@ namespace AssetTaking.Controllers.Api
                             g.Where(x => x.Status == 1).Sum(x => x.Qty ?? 0) - 
                             g.Where(x => x.Status == 2).Sum(x => x.Qty ?? 0)
                         ),
+                        //SerialId = g.First().SerialId,
+                        PoNumber = g.SelectMany(x => x.TblRAssetPos).FirstOrDefault() != null ? 
+                                   g.SelectMany(x => x.TblRAssetPos).First().PoNumber : null,
+                        PoItem = g.SelectMany(x => x.TblRAssetPos).FirstOrDefault() != null ? 
+                                 g.SelectMany(x => x.TblRAssetPos).First().PoItem : null,
+                        DstrctIn = g.First().DstrctIn,
+                        DstrctOut = g.First().DstrctOut,
+                        SerialNumbers = g.SelectMany(x => x.TblRAssetSerials)
+                                         .Where(s => s.Status == 1)
+                                         .Select(s => s.SerialNumber)
+                                         .ToList(),
+                        SerialCount = g.SelectMany(x => x.TblRAssetSerials)
+                                       .Count(s => s.Status == 1),
                         CreatedAt = g.First().CreatedAt,
                         CreatedBy = g.First().CreatedBy
                     })
@@ -295,28 +312,75 @@ namespace AssetTaking.Controllers.Api
         {
             try
             {
-                var asset = _context.TblTAssets.FirstOrDefault(a => a.Id == id);
-                if (asset == null)
+                using var transaction = _context.Database.BeginTransaction();
+
+                // First, load the asset with its related data to ensure EF tracking
+                var assetWithRelated = _context.TblTAssets
+                    .Include(a => a.TblRAssetSerials)
+                    .Include(a => a.TblRAssetPos)
+                    .FirstOrDefault(a => a.Id == id);
+
+                if (assetWithRelated == null)
                 {
                     return NotFound(new { success = false, message = "Asset tidak ditemukan" });
                 }
 
-                using var transaction = _context.Database.BeginTransaction();
-
                 // Cek status asset untuk menentukan logika delete
-                var isAssetIn = asset.Status == (int)StatusAsset.In;
-                var isAssetOut = asset.Status == (int)StatusAsset.Out;
+                var isAssetIn = assetWithRelated.Status == (int)StatusAsset.In;
+                var isAssetOut = assetWithRelated.Status == (int)StatusAsset.Out;
+
+                // Delete related records to avoid foreign key constraint violations
+                // Try both AssetId (business key) and Id (primary key) to handle different FK configurations
+                
+                var relatedSerialsByAssetId = _context.TblRAssetSerials
+                    .Where(s => s.AssetId == assetWithRelated.AssetId)
+                    .ToList();
+
+                var relatedSerialsByPrimaryKey = _context.TblRAssetSerials
+                    .Where(s => s.AssetId == assetWithRelated.Id)
+                    .ToList();
+
+                var relatedPosByAssetId = _context.TblRAssetPos
+                    .Where(p => p.AssetId == assetWithRelated.AssetId)
+                    .ToList();
+
+                var relatedPosByPrimaryKey = _context.TblRAssetPos
+                    .Where(p => p.AssetId == assetWithRelated.Id)
+                    .ToList();
+
+                // Combine and deduplicate
+                var allRelatedSerials = relatedSerialsByAssetId.Union(relatedSerialsByPrimaryKey).ToList();
+                var allRelatedPos = relatedPosByAssetId.Union(relatedPosByPrimaryKey).ToList();
+                
+                // Log what we're about to delete for debugging
+                var serialCount = allRelatedSerials.Count;
+                var poCount = allRelatedPos.Count;
+                
+                // Delete related serial numbers
+                if (allRelatedSerials.Any())
+                {
+                    _context.TblRAssetSerials.RemoveRange(allRelatedSerials);
+                }
+
+                // Delete related PO records
+                if (allRelatedPos.Any())
+                {
+                    _context.TblRAssetPos.RemoveRange(allRelatedPos);
+                }
+
+                // Save changes for related records first
+                _context.SaveChanges();
 
                 if (isAssetIn)
                 {
                     // Delete Asset In: Kurangi quantity di TblTAssetIn (atau set ke 0)
                     var assetIn = _context.TblTAssetIns
-                        .FirstOrDefault(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
+                        .FirstOrDefault(ai => ai.NomorAsset == assetWithRelated.NomorAsset && ai.KodeBarang == assetWithRelated.KodeBarang);
                     
                     if (assetIn != null)
                     {
                         // Kurangi quantity di asset in
-                        assetIn.Qty = (assetIn.Qty ?? 0) - (asset.Qty ?? 0);
+                        assetIn.Qty = (assetIn.Qty ?? 0) - (assetWithRelated.Qty ?? 0);
                         
                         // Jika quantity di AssetIn menjadi 0 atau kurang, set ke 0 atau hapus
                         if (assetIn.Qty <= 0)
@@ -337,10 +401,10 @@ namespace AssetTaking.Controllers.Api
                 {
                     // Delete Asset Out: Kurangi quantity di TblTAssetOut saja (tidak perlu update asset in)
                     var assetOut = _context.TblTAssetOuts
-                        .FirstOrDefault(ao => ao.NomorAsset == asset.NomorAsset && ao.KodeBarang == asset.KodeBarang && ao.Qty == asset.Qty);
+                        .FirstOrDefault(ao => ao.NomorAsset == assetWithRelated.NomorAsset && ao.KodeBarang == assetWithRelated.KodeBarang && ao.Qty == assetWithRelated.Qty);
                     
                     var assetIn = _context.TblTAssetIns
-                        .FirstOrDefault(ao => ao.NomorAsset == asset.NomorAsset && ao.KodeBarang == asset.KodeBarang);
+                        .FirstOrDefault(ao => ao.NomorAsset == assetWithRelated.NomorAsset && ao.KodeBarang == assetWithRelated.KodeBarang);
 
                     if (assetOut != null)
                     {
@@ -349,13 +413,13 @@ namespace AssetTaking.Controllers.Api
                     }
                     if (assetIn != null)
                     {
-                        assetIn.Qty = (assetIn.Qty ?? 0) + (asset.Qty ?? 0);
+                        assetIn.Qty = (assetIn.Qty ?? 0) + (assetWithRelated.Qty ?? 0);
                         assetIn.ModifiedAt = DateTime.Now;
                     }
                 }
 
                 // Delete transaksi asset yang dipilih dari TblTAssets
-                _context.TblTAssets.Remove(asset);
+                _context.TblTAssets.Remove(assetWithRelated);
                 _context.SaveChanges();
 
                 transaction.Commit();
@@ -364,11 +428,31 @@ namespace AssetTaking.Controllers.Api
                 var actionText = isAssetIn ? "Stock asset berkurang/habis" : 
                                 isAssetOut ? "Transaksi Asset Out dibatalkan" : "Transaksi dihapus";
                 
-                return Ok(new { success = true, message = $"Transaksi {statusText} berhasil dihapus. {actionText}." });
+                return Ok(new { 
+                    success = true, 
+                    message = $"Transaksi {statusText} berhasil dihapus. {actionText}.",
+                    debug = new {
+                        assetId = assetWithRelated.AssetId,
+                        primaryKey = assetWithRelated.Id,
+                        serialsDeleted = serialCount,
+                        posDeleted = poCount,
+                        assetCode = assetWithRelated.KodeBarang,
+                        assetNumber = assetWithRelated.NomorAsset
+                    }
+                });
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+                // Log the inner exception details for better debugging
+                var innerException = ex.InnerException?.Message ?? "No inner exception";
+                var fullError = $"Error: {ex.Message}. Inner Exception: {innerException}";
+                
+                return StatusCode(500, new { 
+                    success = false, 
+                    message = "Terjadi kesalahan: " + ex.Message,
+                    details = innerException,
+                    fullError = fullError
+                });
             }
         }
 
@@ -403,19 +487,40 @@ namespace AssetTaking.Controllers.Api
                 }
 
                 // Delete dari semua table
-                // 1. Delete TblTAssets
+                // First, delete related records to avoid foreign key constraint violations
+                
+                // 1. Delete related serial numbers for all assets
+                var assetIds = assetsToDelete.Select(a => a.AssetId).ToList();
+                var relatedSerials = _context.TblRAssetSerials
+                    .Where(s => assetIds.Contains(s.AssetId))
+                    .ToList();
+                if (relatedSerials.Any())
+                {
+                    _context.TblRAssetSerials.RemoveRange(relatedSerials);
+                }
+
+                // 2. Delete related PO records for all assets
+                var relatedPos = _context.TblRAssetPos
+                    .Where(p => assetIds.Contains(p.AssetId))
+                    .ToList();
+                if (relatedPos.Any())
+                {
+                    _context.TblRAssetPos.RemoveRange(relatedPos);
+                }
+
+                // 3. Delete TblTAssets
                 if (assetsToDelete.Any())
                 {
                     _context.TblTAssets.RemoveRange(assetsToDelete);
                 }
 
-                // 2. Delete TblTAssetIn
+                // 4. Delete TblTAssetIn
                 if (assetInToDelete.Any())
                 {
                     _context.TblTAssetIns.RemoveRange(assetInToDelete);
                 }
 
-                // 3. Delete TblTAssetOut
+                // 5. Delete TblTAssetOut
                 if (assetOutToDelete.Any())
                 {
                     _context.TblTAssetOuts.RemoveRange(assetOutToDelete);
@@ -429,10 +534,83 @@ namespace AssetTaking.Controllers.Api
                 if (assetsToDelete.Any()) deletedCounts.Add($"{assetsToDelete.Count} transaksi asset");
                 if (assetInToDelete.Any()) deletedCounts.Add($"{assetInToDelete.Count} record asset in");
                 if (assetOutToDelete.Any()) deletedCounts.Add($"{assetOutToDelete.Count} record asset out");
+                if (relatedSerials.Any()) deletedCounts.Add($"{relatedSerials.Count} serial numbers");
+                if (relatedPos.Any()) deletedCounts.Add($"{relatedPos.Count} PO records");
 
                 var message = $"Berhasil menghapus {string.Join(", ", deletedCounts)} untuk asset {kodeBarang}/{nomorAsset}";
 
                 return Ok(new { success = true, message = message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
+
+        [HttpGet("GetSerialNumbers/{assetId}")]
+        public async Task<IActionResult> GetSerialNumbers(int assetId)
+        {
+            try
+            {
+                // Find the asset first to get the correct AssetId
+                var asset = await _context.TblTAssets.FirstOrDefaultAsync(a => a.Id == assetId);
+                if (asset == null)
+                {
+                    return Ok(new List<object>()); // Return empty list if asset not found
+                }
+
+                var serialNumbers = await _context.TblRAssetSerials
+                    .Include(s => s.State)
+                    .Where(s => s.AssetId == asset.AssetId)
+                    .OrderBy(s => s.SerialNumber)
+                    .Select(s => new
+                    {
+                        SerialId = s.SerialId,
+                        SerialNumber = s.SerialNumber,
+                        StateId = s.StateId,
+                        StateName = s.State != null ? s.State.State : null,
+                        Status = s.Status,
+                        Notes = s.Notes,
+                        CreatedAt = s.CreatedAt,
+                        CreatedBy = s.CreatedBy
+                    })
+                    .ToListAsync();
+
+                return Ok(serialNumbers);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
+
+        [HttpGet("GetPoNumbers/{assetId}")]
+        public async Task<IActionResult> GetPoNumbers(int assetId)
+        {
+            try
+            {
+                // Find the asset first to get the correct AssetId
+                var asset = await _context.TblTAssets.FirstOrDefaultAsync(a => a.Id == assetId);
+                if (asset == null)
+                {
+                    return Ok(new List<object>()); // Return empty list if asset not found
+                }
+
+                var poNumbers = await _context.TblRAssetPos
+                    .Where(p => p.AssetId == asset.AssetId)
+                    .OrderBy(p => p.PoNumber)
+                    .ThenBy(p => p.PoItem)
+                    .Select(p => new
+                    {
+                        Id = p.Id,
+                        PoNumber = p.PoNumber,
+                        PoItem = p.PoItem,
+                        CreatedAt = p.CreatedAt,
+                        CreatedBy = p.CreatedBy
+                    })
+                    .ToListAsync();
+
+                return Ok(poNumbers);
             }
             catch (Exception ex)
             {

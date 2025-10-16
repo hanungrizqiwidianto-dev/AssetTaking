@@ -22,7 +22,12 @@ namespace AssetTaking.Controllers
         [HttpPost]
         public IActionResult MakeSession([FromBody] LoginRequest req)
         {
-            string nrp = req.NRP;
+            string? nrp = req.NRP;
+            
+            if (string.IsNullOrEmpty(nrp))
+            {
+                return Json(new { Remarks = false, Message = "NRP tidak boleh kosong" });
+            }
 
             var dataUser = _context.TblRMasterKaryawanAlls
                                    .FirstOrDefault(a => a.EmployeeId == nrp);

@@ -1,62 +1,57 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace AssetTaking.Models;
 
-[Table("TBL_T_ASSET")]
 public partial class TblTAsset
 {
-    [Key]
-    [Column("id")]
     public int Id { get; set; }
 
-    [Column("nama_barang")]
-    [Unicode(false)]
+    public int AssetId { get; set; }
+
+    public int? AssetInId { get; set; }
+
+    public int? AssetOutId { get; set; }
+
     public string? NamaBarang { get; set; }
 
-    [Column("tanggal_masuk", TypeName = "datetime")]
     public DateTime? TanggalMasuk { get; set; }
 
-    [Column("nomor_asset")]
-    [Unicode(false)]
     public string? NomorAsset { get; set; }
 
-    [Column("kode_barang")]
-    [StringLength(50)]
-    [Unicode(false)]
     public string? KodeBarang { get; set; }
 
-    [Column("kategori_barang")]
-    [StringLength(50)]
-    [Unicode(false)]
     public string? KategoriBarang { get; set; }
 
-    [Column("qty")]
     public int? Qty { get; set; }
 
-    [Column("foto")]
-    [Unicode(false)]
-    public string? Foto { get; set; }
+    public string? DstrctIn { get; set; }
 
-    [Column("status")]
+    public string? DstrctOut { get; set; }
+
     public int? Status { get; set; }
 
-    [Column("created_at", TypeName = "datetime")]
+    public string? PoNumber { get; set; }
+
+    public string? Foto { get; set; }
+
+    public DateTime? SentAt { get; set; }
+
+    public string? SentBy { get; set; }
+
+    public DateTime? AcceptedAt { get; set; }
+
+    public string? AcceptedBy { get; set; }
+
     public DateTime? CreatedAt { get; set; }
 
-    [Column("created_by")]
-    [StringLength(50)]
-    [Unicode(false)]
     public string? CreatedBy { get; set; }
 
-    [Column("modified_at", TypeName = "datetime")]
     public DateTime? ModifiedAt { get; set; }
 
-    [Column("modified_by")]
-    [StringLength(50)]
-    [Unicode(false)]
     public string? ModifiedBy { get; set; }
+
+    public virtual ICollection<TblRAssetPo> TblRAssetPos { get; set; } = new List<TblRAssetPo>();
+
+    public virtual ICollection<TblRAssetSerial> TblRAssetSerials { get; set; } = new List<TblRAssetSerial>();
 }

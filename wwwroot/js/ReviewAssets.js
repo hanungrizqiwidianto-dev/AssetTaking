@@ -5,7 +5,7 @@ $(document).ready(function () {
             dataSrc: ""
         },
         "columnDefs": [
-            { "className": "dt-center", "targets": [0, 1, 3, 4, 5] },
+            { "className": "dt-center", "targets": [0, 1, 3, 4] },
             { "className": "dt-nowrap", "targets": '_all' }
         ],
         scrollX: true,

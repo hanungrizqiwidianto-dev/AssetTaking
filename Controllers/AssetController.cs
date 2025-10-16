@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AssetTaking.Models;
+using AssetTaking.Common;
 using ClosedXML.Excel;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -670,7 +671,7 @@ namespace AssetTaking.Controllers
             return RedirectToAction("AssetOut");
         }
 
-        public async Task<IActionResult> GenerateQR(string nama = "", string nomor = "", string kode = "", string kategori = "", int? qty = null)
+        public async Task<IActionResult> GenerateQR(string nama = "", string nomor = "", string kode = "", string kategori = "", int? qty = null, string serial = "")
         {
             if (HttpContext.Session.GetString("Nrp") == null)
                 return RedirectToAction("Index", "Login");
@@ -689,13 +690,14 @@ namespace AssetTaking.Controllers
             ViewBag.PreKodeBarang = kode;
             ViewBag.PreKategoriBarang = kategori;
             ViewBag.PreQty = qty ?? 1;
+            ViewBag.PreSerialNumber = serial;
             
             return View();
         }
 
         [HttpPost]
         [ActionName("GenerateQR")]
-        public async Task<IActionResult> GenerateQRPost(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string generateMode = "single")
+        public async Task<IActionResult> GenerateQRPost(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string generateMode = "single", string serial = "")
         {
             try
             {
@@ -754,9 +756,12 @@ namespace AssetTaking.Controllers
                         var numbers = existingCodes
                             .Select(code => 
                             {
-                                var parts = code.Split('-');
-                                if (parts.Length > 1 && int.TryParse(parts[1], out int num))
-                                    return num;
+                                if (code != null)
+                                {
+                                    var parts = code.Split('-');
+                                    if (parts.Length > 1 && int.TryParse(parts[1], out int num))
+                                        return num;
+                                }
                                 return 0;
                             })
                             .Where(num => num > 0);
@@ -772,6 +777,9 @@ namespace AssetTaking.Controllers
                         string uniqueKodeBarang = $"{prefix}-{baseNextNumber + i - 1}";
                         string uniqueNomorAsset = !string.IsNullOrEmpty(nomorAsset) ? $"{nomorAsset}-{i:D3}" : "";
                         
+                        // Generate automatic serial number based on category
+                        string serialNumber = GenerateSerialNumber(kategoriBarang, i);
+                        
                         var qrDataObject = new Dictionary<string, object>
                         {
                             ["nomorAsset"] = uniqueNomorAsset,
@@ -779,6 +787,7 @@ namespace AssetTaking.Controllers
                             ["kodeBarang"] = uniqueKodeBarang,
                             ["kategoriBarang"] = kategoriBarang,
                             ["qty"] = 1,
+                            ["serialNumber"] = serialNumber,
                             ["batchNumber"] = i,
                             ["totalBatch"] = qty.Value
                         };
@@ -812,6 +821,9 @@ namespace AssetTaking.Controllers
                         kodeBarang = GenerateKodeBarang(kategoriBarang);
                     }
 
+                    // Generate automatic serial number based on category - kecuali jika sudah ada dari parameter
+                    string serialNumber = !string.IsNullOrEmpty(serial) ? serial : GenerateSerialNumber(kategoriBarang, 1);
+
                     // Buat JSON data untuk QR Code sesuai format scan yang sudah ada
                     var qrDataObject = new
                     {
@@ -819,7 +831,8 @@ namespace AssetTaking.Controllers
                         namaBarang = namaBarang,
                         kodeBarang = kodeBarang,
                         kategoriBarang = kategoriBarang,
-                        qty = qty.Value
+                        qty = qty.Value,
+                        serialNumber = serialNumber
                     };
                     
                     var qrData = System.Text.Json.JsonSerializer.Serialize(qrDataObject);
@@ -830,6 +843,7 @@ namespace AssetTaking.Controllers
                     ViewBag.KategoriBarang = kategoriBarang;
                     ViewBag.KodeBarang = kodeBarang;
                     ViewBag.Qty = qty;
+                    ViewBag.SerialNumber = serialNumber;
                     ViewBag.QRData = qrData;
                     ViewBag.Success = "QR Code berhasil digenerate!";
 
@@ -894,9 +908,12 @@ namespace AssetTaking.Controllers
                 var numbers = existingCodes
                     .Select(code => 
                     {
-                        var parts = code.Split('-');
-                        if (parts.Length > 1 && int.TryParse(parts[1], out int num))
-                            return num;
+                        if (code != null)
+                        {
+                            var parts = code.Split('-');
+                            if (parts.Length > 1 && int.TryParse(parts[1], out int num))
+                                return num;
+                        }
                         return 0;
                     })
                     .Where(num => num > 0);
@@ -930,7 +947,7 @@ namespace AssetTaking.Controllers
                     ViewBag.BatchData = batchItems;
                     ViewBag.IsBatch = true;
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                     // Jika error, coba deserialize sebagai List<object> seperti sebelumnya
                     try
@@ -952,6 +969,30 @@ namespace AssetTaking.Controllers
             }
 
             return View();
+        }
+
+        // Helper method for serial number generation (for QR generation only)
+        private string GenerateSerialNumber(string kategoriBarang, int sequenceNumber)
+        {
+            string categoryCode = GetCategoryCode(kategoriBarang);
+            return $"{categoryCode}{sequenceNumber:D5}";
+        }
+
+        private string GetCategoryCode(string kategoriBarang)
+        {
+            return kategoriBarang?.ToUpper() switch
+            {
+                "RND" => "RND",
+                "SPAREPART" => "SPR",
+                "TOOLS" => "TLS",
+                "EQUIPMENT" => "EQP",
+                "FURNITURE" => "FUR",
+                "ELECTRONICS" => "ELC",
+                "AUTOMOTIVE" => "AUT",
+                "SAFETY" => "SFT",
+                "CONSUMABLE" => "CON",
+                _ => "GEN" // General category for unknown types
+            };
         }
     }
 }

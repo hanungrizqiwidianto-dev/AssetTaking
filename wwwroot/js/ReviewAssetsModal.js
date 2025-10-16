@@ -171,6 +171,34 @@ $(document).ready(function () {
                                                 '<td><span class="badge bg-dark">' + (asset.qty || 0) + '</span></td>' +
                                             '</tr>' +
                                             '<tr>' +
+                                                '<td><strong>State:</strong></td>' +
+                                                '<td>' + (asset.state || '-') + '</td>' +
+                                            '</tr>' +
+                                            '<tr>' +
+                                                '<td><strong>District:</strong></td>' +
+                                                '<td>' + (asset.statusText === 'Asset In' ? (asset.dstrctIn || '-') : (asset.dstrctOut || '-')) + '</td>' +
+                                            '</tr>' +
+                                            '<tr>' +
+                                                '<td><strong>PO Numbers:</strong></td>' +
+                                                '<td>' + 
+                                                    '<button type="button" class="btn btn-sm btn-outline-secondary btn-view-pos" ' +
+                                                        'data-id="' + asset.id + '" ' +
+                                                        'data-nama="' + asset.namaBarang + '">' +
+                                                        '<i class="fa fa-file-text"></i> View PO' +
+                                                    '</button>' +
+                                                '</td>' +
+                                            '</tr>' +
+                                            '<tr>' +
+                                                '<td><strong>Serial Numbers:</strong></td>' +
+                                                '<td>' + 
+                                                    '<button type="button" class="btn btn-sm btn-outline-primary btn-view-serials" ' +
+                                                        'data-id="' + asset.id + '" ' +
+                                                        'data-nama="' + asset.namaBarang + '">' +
+                                                        '<i class="fa fa-list"></i> View Serials' +
+                                                    '</button>' +
+                                                '</td>' +
+                                            '</tr>' +
+                                            '<tr>' +
                                                 '<td><strong>Tanggal Masuk:</strong></td>' +
                                                 '<td>' + (asset.tanggalMasuk ? moment(asset.tanggalMasuk).format("DD/MM/YYYY") : '-') + '</td>' +
                                             '</tr>' +
@@ -251,6 +279,20 @@ $(document).ready(function () {
                     '<td><span class="badge bg-info">' + (asset.nomorAsset || '-') + '</span></td>' +
                     '<td>' + (asset.kategoriBarang || '-') + '</td>' +
                     '<td><span class="badge bg-dark">' + (asset.qty || 0) + '</span></td>' +
+                    '<td>' + (asset.state || '-') + '</td>' +
+                    '<td>' + (asset.statusText === 'Asset In' ? (asset.dstrctIn || '-') : (asset.dstrctOut || '-')) + '</td>' +
+                    '<td>' + 
+                        '<button type="button" class="btn btn-sm btn-outline-secondary btn-view-pos me-1" ' +
+                            'data-id="' + asset.id + '" ' +
+                            'data-nama="' + asset.namaBarang + '" title="View PO Numbers">' +
+                            '<i class="fa fa-file-text"></i>' +
+                        '</button>' +
+                        '<button type="button" class="btn btn-sm btn-outline-primary btn-view-serials" ' +
+                            'data-id="' + asset.id + '" ' +
+                            'data-nama="' + asset.namaBarang + '" title="View Serial Numbers">' +
+                            '<i class="fa fa-list"></i>' +
+                        '</button>' +
+                    '</td>' +
                     '<td>' + (asset.tanggalMasuk ? moment(asset.tanggalMasuk).format("DD/MM/YYYY") : '-') + '</td>' +
                     '<td>' +
                         '<div class="btn-group" role="group">' +
@@ -276,7 +318,7 @@ $(document).ready(function () {
                 '</tr>';
             });
         } else {
-            tbody = '<tr><td colspan="10" class="text-center">No data available</td></tr>';
+            tbody = '<tr><td colspan="16" class="text-center">No data available</td></tr>';
         }
         
         $('#assetDetailsTable tbody').html(tbody);
@@ -355,5 +397,162 @@ $(document).ready(function () {
         var end = Math.min(modalCurrentPage * modalPageSize, modalPaginationData.totalRecords);
         
         $('#modalPaginationInfo').text('Showing ' + start + ' to ' + end + ' of ' + modalPaginationData.totalRecords + ' results');
+    }
+
+    // Handle view serials button click
+    $(document).on('click', '.btn-view-serials', function() {
+        const assetId = $(this).data('id');
+        const assetNama = $(this).data('nama');
+        
+        // Find asset data from modalAssetsData
+        const assetData = modalAssetsData.find(asset => asset.id == assetId);
+        
+        // Store asset data globally for QR generation
+        window.currentAssetForSerial = assetData;
+        
+        // Update modal title
+        $('#serialDetailsModal .block-title').text('Serial Numbers - ' + assetNama);
+        
+        // Load serial numbers for this asset
+        loadSerialNumbers(assetId);
+        
+        // Show modal
+        $('#serialDetailsModal').modal('show');
+    });
+
+    // Handle view PO numbers button click
+    $(document).on('click', '.btn-view-pos', function() {
+        const assetId = $(this).data('id');
+        const assetNama = $(this).data('nama');
+        
+        // Update modal title
+        $('#poDetailsModal .block-title').text('PO Numbers - ' + assetNama);
+        
+        // Load PO numbers for this asset
+        loadPoNumbers(assetId);
+        
+        // Show modal
+        $('#poDetailsModal').modal('show');
+    });
+
+    function loadSerialNumbers(assetId) {
+        $.ajax({
+            url: '/api/Review/GetSerialNumbers/' + assetId,
+            method: 'GET',
+            beforeSend: function() {
+                $('#serialDetailsTable tbody').html('<tr><td colspan="6" class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading...</td></tr>');
+            },
+            success: function(response) {
+                if (response && response.length > 0) {
+                    let html = '';
+                    response.forEach(function(serial) {
+                        const statusBadge = serial.status === 1 ? 
+                            '<span class="badge bg-success">Active</span>' : 
+                            '<span class="badge bg-secondary">Inactive</span>';
+                            
+                        const stateBadge = serial.stateName ? 
+                            '<span class="badge bg-info">' + serial.stateName + '</span>' : 
+                            '<span class="badge bg-light text-dark">No State</span>';
+                            
+                        html += '<tr>' +
+                            '<td><strong>' + (serial.serialNumber || '-') + '</strong></td>' +
+                            '<td>' + statusBadge + '</td>' +
+                            '<td>' + stateBadge + '</td>' +
+                            '<td>' + (serial.notes || '-') + '</td>' +
+                            '<td>' + (serial.createdAt ? moment(serial.createdAt).format("DD/MM/YYYY HH:mm") : '-') + '</td>' +
+                            '<td>' +
+                                '<button type="button" class="btn btn-sm btn-success btn-generate-qr-serial" ' +
+                                    'data-serial="' + serial.serialNumber + '" ' +
+                                    'title="Generate QR Code">' +
+                                    '<i class="fa fa-qrcode"></i> QR' +
+                                '</button>' +
+                            '</td>' +
+                        '</tr>';
+                    });
+                    $('#serialDetailsTable tbody').html(html);
+                } else {
+                    $('#serialDetailsTable tbody').html('<tr><td colspan="6" class="text-center">No serial numbers found</td></tr>');
+                }
+            },
+            error: function() {
+                $('#serialDetailsTable tbody').html('<tr><td colspan="6" class="text-center text-danger">Error loading serial numbers</td></tr>');
+            }
+        });
+    }
+
+    function loadPoNumbers(assetId) {
+        $.ajax({
+            url: '/api/Review/GetPoNumbers/' + assetId,
+            method: 'GET',
+            beforeSend: function() {
+                $('#poDetailsTable tbody').html('<tr><td colspan="4" class="text-center"><i class="fa fa-spinner fa-spin"></i> Loading...</td></tr>');
+            },
+            success: function(response) {
+                if (response && response.length > 0) {
+                    let html = '';
+                    response.forEach(function(po) {
+                        html += '<tr>' +
+                            '<td><strong>' + (po.poNumber || '-') + '</strong></td>' +
+                            '<td>' + (po.poItem || '-') + '</td>' +
+                            '<td>' + (po.createdAt ? moment(po.createdAt).format("DD/MM/YYYY HH:mm") : '-') + '</td>' +
+                            '<td>' + (po.createdBy || '-') + '</td>' +
+                        '</tr>';
+                    });
+                    $('#poDetailsTable tbody').html(html);
+                } else {
+                    $('#poDetailsTable tbody').html('<tr><td colspan="4" class="text-center">No PO numbers found</td></tr>');
+                }
+            },
+            error: function() {
+                $('#poDetailsTable tbody').html('<tr><td colspan="4" class="text-center text-danger">Error loading PO numbers</td></tr>');
+            }
+        });
+    }
+
+    // Handle QR generation for serial numbers  
+    $(document).on('click', '.btn-generate-qr-serial', function() {
+        const serialNumber = $(this).data('serial');
+        
+        if (!serialNumber) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Serial number not found.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
+        // Get asset data from global variable
+        const assetData = window.currentAssetForSerial;
+        
+        if (!assetData) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Asset data not found.',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
+        // Use the same QR generation function as main review list
+        generateQRFromAssetSerial(assetData.namaBarang, assetData.nomorAsset, assetData.kodeBarang, assetData.kategoriBarang, assetData.qty, serialNumber);
+    });
+
+    // Function untuk generate QR dari asset data dengan serial number
+    function generateQRFromAssetSerial(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty, serialNumber) {
+        // Encode parameters untuk URL - sama seperti generateQRFromAsset tapi dengan serial number
+        const params = new URLSearchParams({
+            nama: namaBarang || '',
+            nomor: nomorAsset || '',
+            kode: kodeBarang || '',
+            kategori: kategoriBarang || '',
+            qty: qty || '1',
+            serial: serialNumber || ''  // Tambahan serial number
+        });
+        
+        // Redirect ke halaman Generate QR dengan parameter
+        window.location.href = `/Asset/GenerateQR?${params.toString()}`;
     }
 });

@@ -18,6 +18,11 @@
                     </button>
                 </li>
                 <li class="nav-item">
+                    <button class="nav-link" id="scan-tab" data-bs-toggle="tab" data-bs-target="#scan" type="button" role="tab">
+                        <i class="fa fa-qrcode me-1"></i>Scan QR/Barcode
+                    </button>
+                </li>
+                <li class="nav-item">
                     <button class="nav-link" id="excel-tab" data-bs-toggle="tab" data-bs-target="#excel" type="button" role="tab">
                         <i class="fa fa-file-excel me-1"></i>Import Excel
                     </button>
@@ -81,6 +86,53 @@
             <div class="row">
                 <div class="col-lg-6">
                     <div class="mb-4">
+                        <label class="form-label" for="state">State/Kondisi</label>
+                        <select class="form-control" id="state" name="state">
+                            <option value="">Pilih State...</option>
+                            <!-- Options akan diload dari API -->
+                        </select>
+                        <div class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Kondisi asset saat keluar
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="mb-4">
+                        <label class="form-label" for="dstrctOut">District Out</label>
+                        <select class="form-control" id="dstrctOut" name="dstrctOut">
+                            <option value="">Pilih District...</option>
+                            <!-- Options akan diload dari API -->
+                        </select>
+                        <div class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Lokasi district tujuan
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="mb-4">
+                        <label class="form-label" for="selectedSerials">Serial Numbers</label>
+                        <div id="serialNumbersContainer" class="border rounded p-3" style="min-height: 100px; background-color: #f8f9fa;">
+                            <div class="text-muted text-center">
+                                <i class="fa fa-info-circle me-1"></i>
+                                Pilih asset terlebih dahulu untuk melihat serial numbers
+                            </div>
+                        </div>
+                        <div class="form-text text-muted">
+                            <i class="fa fa-info-circle me-1"></i>
+                            Pilih serial numbers yang akan di-checkout
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-lg-6">
+                    <div class="mb-4">
                         <label class="form-label" for="fotoFile">Upload Foto Baru (Opsional)</label>
                         <input type="file" class="form-control" id="fotoFile" name="fotoFile" accept="image/*">
                         <div class="form-text text-muted">
@@ -112,6 +164,116 @@
                         </button>
                     </div>
                 </form>
+            </div>
+
+            <!-- Scan QR/Barcode Tab -->
+            <div class="tab-pane fade" id="scan" role="tabpanel">
+                <div class="row">
+                    <!-- Scanner Section -->
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fa fa-camera me-1"></i> Scanner
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div id="qr-scanner-section-out">
+                                    <div id="qr-reader-out" style="width: 100%; max-width: 400px; margin: 0 auto; display: none;"></div>
+                                    
+                                    <!-- Scanner Controls -->
+                                    <div class="text-center">
+                                        <div id="scanner-status-out" class="mb-3">
+                                            <i class="fa fa-qrcode fa-3x text-muted mb-2 d-block"></i>
+                                            <h6 class="text-muted">Klik tombol di bawah untuk memulai scan</h6>
+                                        </div>
+                                        
+                                        <button type="button" class="btn btn-success me-2" id="startScanBtnOut">
+                                            <i class="fa fa-camera me-1"></i> Mulai Scan
+                                        </button>
+                                        <button type="button" class="btn btn-danger" id="stopScanBtnOut" style="display:none;">
+                                            <i class="fa fa-stop me-1"></i> Stop
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- Scan Result Alert -->
+                                    <div id="scan-result-out" class="alert alert-success mt-3" style="display:none;">
+                                        <i class="fa fa-check-circle me-1"></i>
+                                        <strong>Scan berhasil!</strong> Data telah diisi otomatis.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Scanned Data Form -->
+                    <div class="col-lg-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fa fa-edit me-1"></i> Asset Out Data
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form id="scannedAssetOutForm" enctype="multipart/form-data">
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_out_nomorAsset">Nomor Asset</label>
+                                        <input type="text" class="form-control" id="scan_out_nomorAsset" name="nomorAsset" readonly>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_out_namaBarang">Nama Barang</label>
+                                        <input type="text" class="form-control" id="scan_out_namaBarang" name="namaBarang" readonly>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_out_qty">Quantity Out <span class="text-danger">*</span></label>
+                                        <input type="number" class="form-control" id="scan_out_qty" name="qty" min="1" max="1" value="1" required>
+                                        <div class="form-text text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            Maksimal quantity: <span id="scan_out_maxQty">1</span>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_out_state">State</label>
+                                        <select class="form-control" id="scan_out_state" name="state">
+                                            <option value="">Pilih State...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_out_dstrctOut">District Out</label>
+                                        <select class="form-control" id="scan_out_dstrctOut" name="dstrctOut">
+                                            <option value="">Pilih District...</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Serial Numbers <span class="text-danger">*</span></label>
+                                        <div id="scan_serialNumbersContainer" class="border rounded p-3 bg-light">
+                                            <div class="text-muted text-center">
+                                                <i class="fa fa-info-circle me-1"></i>Scan asset terlebih dahulu untuk melihat serial numbers
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label" for="scan_out_fotoFile">Upload Foto (Optional)</label>
+                                        <input type="file" class="form-control" id="scan_out_fotoFile" name="fotoFile" accept="image/*">
+                                        <div class="form-text text-muted">
+                                            Format: JPG, JPEG, PNG, GIF. Maksimal 5MB.
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Submit Button -->
+                                    <div class="text-end">
+                                        <button type="submit" class="btn btn-primary me-2" id="scan_submitBtn" disabled>
+                                            <i class="fa fa-save"></i> Submit Asset Out
+                                        </button>
+                                        <button type="reset" class="btn btn-secondary">
+                                            <i class="fa fa-refresh"></i> Reset
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Excel Import Tab -->

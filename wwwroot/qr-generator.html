@@ -110,9 +110,23 @@
             });
         }
         
-        // Generate default QR on page load
+        // Generate default QR on page load or from URL parameter
         window.onload = function() {
-            generateQRFromJSON();
+            // Check if there's data in URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const dataFromUrl = urlParams.get('data');
+            
+            if (dataFromUrl) {
+                // Generate QR from URL parameter (usually from serial number click)
+                const decodedData = decodeURIComponent(dataFromUrl);
+                generateQR(decodedData, `QR Code for: ${decodedData}`);
+                
+                // Also populate the simple data field for editing
+                document.getElementById('simpleData').value = decodedData;
+            } else {
+                // Generate default QR from JSON
+                generateQRFromJSON();
+            }
         };
     </script>
 </body>

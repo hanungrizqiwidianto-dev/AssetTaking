@@ -86,6 +86,9 @@
                                         <th>Nomor Asset</th>
                                         <th>Kategori</th>
                                         <th>Qty</th>
+                                        <th>State</th>
+                                        <th>District</th>
+                                        <th>Actions</th>
                                         <th>Tanggal Masuk</th>
                                         <th>Action</th>
                                     </tr>
@@ -110,6 +113,92 @@
                 </div>
                 <div class="block-content block-content-full block-content-sm text-end border-top">
                     <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Serial Numbers Details -->
+<div class="modal" id="serialDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="block block-rounded shadow-none mb-0 border-success">
+                <div class="block-header bg-success text-white">
+                    <h3 class="block-title text-white">
+                        <i class="fa fa-list me-2"></i>Serial Numbers Details
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn-block-option text-white" data-bs-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content block-content-full">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-vcenter" id="serialDetailsTable">
+                            <thead class="text-center bg-success text-white">
+                                <tr>
+                                    <th>Serial Number</th>
+                                    <th>Status</th>
+                                    <th>State</th>
+                                    <th>Notes</th>
+                                    <th>Created At</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Serial details will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="block-content block-content-full block-content-sm text-end border-top bg-light">
+                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">
+                        <i class="fa fa-check me-1"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for PO Numbers Details -->
+<div class="modal" id="poDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="block block-rounded shadow-none mb-0 border-warning">
+                <div class="block-header bg-warning text-dark">
+                    <h3 class="block-title text-dark">
+                        <i class="fa fa-file-text me-2"></i>PO Numbers Details
+                    </h3>
+                    <div class="block-options">
+                        <button type="button" class="btn-block-option text-dark" data-bs-dismiss="modal">
+                            <i class="fa fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="block-content block-content-full">
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped table-vcenter" id="poDetailsTable">
+                            <thead class="text-center bg-warning text-dark">
+                                <tr>
+                                    <th>PO Number</th>
+                                    <th>PO Item</th>
+                                    <th>Created At</th>
+                                    <th>Created By</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- PO details will be loaded here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="block-content block-content-full block-content-sm text-end border-top bg-light">
+                    <button type="button" class="btn btn-warning" data-bs-dismiss="modal">
+                        <i class="fa fa-check me-1"></i>Close
+                    </button>
                 </div>
             </div>
         </div>

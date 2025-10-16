@@ -245,6 +245,14 @@
                             <span class="info-label">Quantity:</span>
                             <span class="info-value">@(item.ContainsKey("qty") ? item["qty"]?.ToString() : "1")</span>
                         </div>
+                        
+                        @if (item.ContainsKey("serialNumber") && !string.IsNullOrEmpty(item["serialNumber"]?.ToString()))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">Serial Number:</span>
+                                <span class="info-value serial-number">@item["serialNumber"]</span>
+                            </div>
+                        }
                     </div>
                 </div>
                 
@@ -303,6 +311,14 @@
                         <div class="info-row">
                             <span class="info-label">Quantity:</span>
                             <span class="info-value">@ViewBag.Qty</span>
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(ViewBag.SerialNumber))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">Serial Number:</span>
+                            <span class="info-value serial-number">@ViewBag.SerialNumber</span>
                         </div>
                     }
                 </div>

@@ -62,6 +62,10 @@
                             <div class="block-content">
                                 <form method="post" asp-action="GenerateQR">
                                     <input type="hidden" name="generateMode" value="single">
+                                    @if (!string.IsNullOrEmpty(ViewBag.PreSerialNumber))
+                                    {
+                                        <input type="hidden" name="serial" value="@ViewBag.PreSerialNumber">
+                                    }
                                     
                                     <div class="mb-4">
                                         <label class="form-label" for="namaBarang">Nama Barang <span class="text-danger">*</span></label>
@@ -114,6 +118,32 @@
                                             <i class="fa fa-info-circle me-1"></i>
                                             Single generate hanya untuk 1 item
                                         </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label">Serial Numbers</label>
+                                        @if (!string.IsNullOrEmpty(ViewBag.PreSerialNumber))
+                                        {
+                                            <div class="form-control bg-success bg-opacity-10" style="min-height: 38px; display: flex; align-items: center;">
+                                                <i class="fa fa-check-circle me-2 text-success"></i>
+                                                <span class="text-success fw-bold">@ViewBag.PreSerialNumber</span>
+                                            </div>
+                                            <div class="form-text text-success">
+                                                <i class="fa fa-info-circle me-1"></i>
+                                                Serial number sudah terdefinisi untuk QR Code ini
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="form-control bg-light" style="min-height: 38px; display: flex; align-items: center;">
+                                                <i class="fa fa-cog me-2 text-muted"></i>
+                                                <span class="text-muted">Akan dibuat otomatis berdasarkan kategori yang dipilih</span>
+                                            </div>
+                                            <div class="form-text text-muted">
+                                                <i class="fa fa-info-circle me-1"></i>
+                                                Serial numbers akan dibuat otomatis (contoh: RND12391) dan disertakan dalam QR Code
+                                            </div>
+                                        }
                                     </div>
                                     
                                     <div class="block-content block-content-full text-end bg-body-light">
@@ -181,6 +211,13 @@
                                                         <tr>
                                                             <td class="text-start"><strong>Quantity:</strong></td>
                                                             <td class="text-start">@ViewBag.Qty</td>
+                                                        </tr>
+                                                    }
+                                                    @if (!string.IsNullOrEmpty(ViewBag.SerialNumber))
+                                                    {
+                                                        <tr>
+                                                            <td class="text-start"><strong>Serial Number:</strong></td>
+                                                            <td class="text-start"><span class="badge bg-primary">@ViewBag.SerialNumber</span></td>
                                                         </tr>
                                                     }
                                                 </table>
@@ -297,6 +334,19 @@
                                         </div>
                                     </div>
                                     
+                                    <div class="mb-4">
+                                        <label class="form-label">Serial Numbers</label>
+                                        <div class="form-control bg-light" style="min-height: 38px; display: flex; align-items: center;">
+                                            <i class="fa fa-cog me-2 text-muted"></i>
+                                            <span class="text-muted">Akan dibuat otomatis sesuai jumlah qty yang dipilih</span>
+                                        </div>
+                                        <div class="form-text text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            Serial numbers akan dibuat otomatis berdasarkan kategori dan jumlah qty
+                                        </div>
+                                    </div>
+                                    
+                                    
                                     <div class="block-content block-content-full text-end bg-body-light">
                                         @* <a href="@Url.Action("Index", "Asset")" class="btn btn-secondary me-1">
                                             <i class="fa fa-times me-1"></i> Batal
@@ -399,6 +449,11 @@
                                                                  alt="QR Code @(i + 1)" class="img-fluid mb-1" style="max-width: 80px;" />
                                                             <br>
                                                             <small class="text-muted">@item["kodeBarang"]</small>
+                                                            @if (item.ContainsKey("serialNumber") && !string.IsNullOrEmpty(item["serialNumber"]?.ToString()))
+                                                            {
+                                                                <br>
+                                                                <span class="badge bg-info text-dark">@item["serialNumber"]</span>
+                                                            }
                                                         </div>
                                                     </div>
                                                 }

@@ -27,7 +27,7 @@ namespace AssetTaking.ViewComponents
 
             // ambil sub menu (contoh logic dari project lama)
             ViewBag.Sub = _context.TblRSubMenus
-                                  .Where(x => x.Akses.Contains("ALL"))
+                                  .Where(x => x.Akses != null && x.Akses.Contains("ALL"))
                                   .ToList();
 
             return View("_Sidebar", menu);

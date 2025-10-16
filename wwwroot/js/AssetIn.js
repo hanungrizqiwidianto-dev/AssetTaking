@@ -3,6 +3,12 @@
     
     // Load categories from database
     loadCategories();
+    
+    // Load states from database
+    loadStates();
+    
+    // Load districts from database  
+    loadDistricts();
 
     // Image preview functionality
     $('#fotoFile').on('change', function(e) {
@@ -95,14 +101,33 @@
         $('#assetInForm')[0].reset();
         // Reset checkbox to unchecked (automatic mode)
         $('#manualKodeBarang').prop('checked', false);
+        $('#manualSerial').prop('checked', false);
+        $('#scan_manualSerial').prop('checked', false);
+        
         // Reset disabled fields properly
         $('#kodeBarang').prop('disabled', true);
         $('#kodeBarang').prop('readonly', true);
         $('#kodeBarang').val('');
+        
+        // Reset serial number display for manual form
+        $('#autoSerialInfo').show();
+        $('#manualSerialInput').hide();
+        $('#serialNumbers').val('');
+        
+        // Reset serial number display for scan form
+        $('#scan_autoSerialInfo').show();
+        $('#scan_manualSerialInput').hide();
+        $('#scan_serialNumbers').val('');
+        
         // Reset info text
         $('#kodeBarangInfo').html('<i class="fa fa-info-circle me-1"></i> Kode barang akan otomatis diisi berdasarkan kategori yang dipilih');
+        $('#serialHelpText').text('Serial numbers akan dibuat otomatis (contoh: RND12391) berdasarkan kategori yang dipilih');
+        $('#scan_serialHelpText').text('Serial numbers akan dibuat otomatis (contoh: RND12391) berdasarkan kategori yang dipilih');
+        
         // Clear image preview
         $('#imagePreview').hide();
+        $('#scan_imagePreview').hide();
+        
         // Remove validation classes
         $('#nomorAsset, #kodeBarang').removeClass('is-invalid is-info');
     }
@@ -111,6 +136,7 @@
     $('#kategoriBarang').on('change', async function() {
         const kategoriBarang = $(this).val().trim();
         const isManualInput = $('#manualKodeBarang').is(':checked');
+        const isManualSerial = $('#manualSerial').is(':checked');
         
         if (kategoriBarang && !isManualInput) {
             // Temporarily enable the field to set value
@@ -142,7 +168,160 @@
                 $('#kodeBarang').prop('disabled', true);
             }
         }
+        
+        // Auto-generate serial numbers when category changes (if not manual mode)
+        if (kategoriBarang && !isManualSerial) {
+            const qty = parseInt($('#qty').val()) || 1;
+            
+            // Generate actual serial numbers for manual input tab
+            if ($('#manualInputTab').hasClass('active')) {
+                generateAndDisplaySerialNumbers(kategoriBarang, qty);
+            } else {
+                // For other tabs, just show preview
+                const serialPreview = generateSerialPreview(kategoriBarang, qty);
+                $('#serialHelpText').html(
+                    '<i class="fa fa-info-circle me-1"></i>' +
+                    `Serial numbers akan dibuat otomatis berdasarkan kategori "${kategoriBarang}": ` +
+                    `<strong>${serialPreview}</strong>`
+                );
+            }
+        } else if (!kategoriBarang && !isManualSerial) {
+            // Reset to default help text
+            $('#serialHelpText').text('Serial numbers akan dibuat otomatis (contoh: RND12391) berdasarkan kategori yang dipilih');
+            $('#serialNumbers').val('');
+        }
     });
+    
+    // Auto-update serial numbers when quantity changes
+    $('#qty').on('input change', function() {
+        const kategoriBarang = $('#kategoriBarang').val();
+        const isManualSerial = $('#manualSerial').is(':checked');
+        
+        if (kategoriBarang && !isManualSerial) {
+            const qty = parseInt($(this).val()) || 1;
+            
+            // Generate actual serial numbers for manual input tab
+            if ($('#manualInputTab').hasClass('active')) {
+                generateAndDisplaySerialNumbers(kategoriBarang, qty);
+            } else {
+                // For other tabs, just show preview
+                const serialPreview = generateSerialPreview(kategoriBarang, qty);
+                $('#serialHelpText').html(
+                    '<i class="fa fa-info-circle me-1"></i>' +
+                    `Serial numbers akan dibuat otomatis berdasarkan kategori "${kategoriBarang}": ` +
+                    `<strong>${serialPreview}</strong>`
+                );
+            }
+        }
+    });
+    
+    // Generate and display serial numbers
+    async function generateAndDisplaySerialNumbers(kategoriBarang, qty) {
+        try {
+            const result = await generateSerialNumbersForCategory(kategoriBarang, qty);
+            
+            if (result.success) {
+                // Fill the serial numbers textarea
+                $('#serialNumbers').val(result.serialNumbersText);
+                
+                // Update help text
+                $('#serialHelpText').html(
+                    '<i class="fa fa-check-circle me-1 text-success"></i>' +
+                    `Serial numbers telah digenerate otomatis berdasarkan kategori "${kategoriBarang}"`
+                );
+            } else {
+                // Show preview if generation fails
+                const serialPreview = generateSerialPreview(kategoriBarang, qty);
+                $('#serialHelpText').html(
+                    '<i class="fa fa-info-circle me-1"></i>' +
+                    `Serial numbers akan dibuat otomatis berdasarkan kategori "${kategoriBarang}": ` +
+                    `<strong>${serialPreview}</strong>`
+                );
+            }
+        } catch (error) {
+            console.error('Error generating serial numbers:', error);
+            const serialPreview = generateSerialPreview(kategoriBarang, qty);
+            $('#serialHelpText').html(
+                '<i class="fa fa-info-circle me-1"></i>' +
+                `Serial numbers akan dibuat otomatis berdasarkan kategori "${kategoriBarang}": ` +
+                `<strong>${serialPreview}</strong>`
+            );
+        }
+    }
+
+    // Auto-generate serial numbers when category and quantity are set (for manual input)
+    async function generateSerialNumbersForCategory(kategoriBarang, qty) {
+        try {
+            const response = await fetch('/api/AssetIn/GenerateSerialNumbers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    KategoriBarang: kategoriBarang,
+                    Quantity: qty
+                })
+            });
+
+            const result = await response.json();
+            return result;
+        } catch (error) {
+            console.error('Error generating serial numbers:', error);
+            return { success: false, message: 'Error generate serial numbers' };
+        }
+    }
+
+    // Function to generate serial number preview (for display only)
+    function generateSerialPreview(kategoriBarang, qty) {
+        // Get category prefix
+        let prefix = '';
+        switch (kategoriBarang.toLowerCase()) {
+            case 'rnd': 
+            case 'research & development':
+                prefix = 'RND';
+                break;
+            case 'sparepart':
+            case 'spare part':
+                prefix = 'SPR';
+                break;
+            case 'tools':
+                prefix = 'TLS';
+                break;
+            case 'equipment':
+                prefix = 'EQP';
+                break;
+            case 'furniture':
+                prefix = 'FUR';
+                break;
+            case 'electronic':
+                prefix = 'ELC';
+                break;
+            case 'automotive':
+                prefix = 'AUT';
+                break;
+            case 'software':
+                prefix = 'SFT';
+                break;
+            case 'consumable':
+                prefix = 'CON';
+                break;
+            default:
+                prefix = 'GEN';
+                break;
+        }
+        
+        if (qty <= 3) {
+            // Show all serial numbers for small quantities
+            let previews = [];
+            for (let i = 0; i < qty; i++) {
+                previews.push(`${prefix}${String(i + 1).padStart(5, '0')}`);
+            }
+            return previews.join(', ');
+        } else {
+            // Show first few and count for larger quantities
+            return `${prefix}00001, ${prefix}00002, ... (${qty} total)`;
+        }
+    }
 
     // Handle manual input checkbox toggle
     $('#manualKodeBarang').on('change', function() {
@@ -173,6 +352,69 @@
             } else {
                 kodeBarangField.val('');
             }
+        }
+    });
+
+    // Handle manual serial number checkbox toggle
+    $('#manualSerial').on('change', function() {
+        const isManualInput = $(this).is(':checked');
+        const autoSerialInfo = $('#autoSerialInfo');
+        const manualSerialInput = $('#manualSerialInput');
+        const serialHelpText = $('#serialHelpText');
+        
+        if (isManualInput) {
+            // Show manual input
+            autoSerialInfo.hide();
+            manualSerialInput.show();
+            $('#serialNumbers').focus();
+            
+            // Update help text
+            serialHelpText.text('Masukkan serial number secara manual. Pisahkan dengan koma jika quantity lebih dari 1 (contoh: RND12391, RND12392)');
+        } else {
+            // Show automatic info
+            manualSerialInput.hide();
+            autoSerialInfo.show();
+            $('#serialNumbers').val('');
+            
+            // Update help text and regenerate preview if category is selected
+            const kategoriBarang = $('#kategoriBarang').val();
+            if (kategoriBarang) {
+                const qty = parseInt($('#qty').val()) || 1;
+                const serialPreview = generateSerialPreview(kategoriBarang, qty);
+                serialHelpText.html(
+                    '<i class="fa fa-info-circle me-1"></i>' +
+                    `Serial numbers akan dibuat otomatis berdasarkan kategori "${kategoriBarang}": ` +
+                    `<strong>${serialPreview}</strong>`
+                );
+            } else {
+                serialHelpText.text('Serial numbers akan dibuat otomatis (contoh: RND12391) berdasarkan kategori yang dipilih');
+            }
+        }
+    });
+
+    // Handle manual serial number checkbox toggle for scan form
+    $('#scan_manualSerial').on('change', function() {
+        const isManualInput = $(this).is(':checked');
+        const autoSerialInfo = $('#scan_autoSerialInfo');
+        const manualSerialInput = $('#scan_manualSerialInput');
+        const serialHelpText = $('#scan_serialHelpText');
+        
+        if (isManualInput) {
+            // Show manual input
+            autoSerialInfo.hide();
+            manualSerialInput.show();
+            $('#scan_serialNumbers').focus();
+            
+            // Update help text
+            serialHelpText.text('Masukkan serial number secara manual. Pisahkan dengan koma jika quantity lebih dari 1 (contoh: RND12391, RND12392)');
+        } else {
+            // Show automatic info
+            manualSerialInput.hide();
+            autoSerialInfo.show();
+            $('#scan_serialNumbers').val('');
+            
+            // Update help text
+            serialHelpText.text('Serial numbers akan dibuat otomatis (contoh: RND12391) berdasarkan kategori yang dipilih');
         }
     });
 
@@ -239,6 +481,19 @@
         formData.append('KodeBarang', kodeBarang);
         formData.append('KategoriBarang', $('#kategoriBarang').val());
         formData.append('Qty', parseInt($('#qty').val()));
+        
+        // Add manual serial data
+        const isManualSerial = $('#manualSerial').is(':checked');
+        formData.append('ManualSerial', isManualSerial);
+        if (isManualSerial) {
+            formData.append('SerialNumbers', $('#serialNumbers').val().trim());
+        }
+        
+        // Add PO data
+        formData.append('PoNumber', $('#poNumber').val() || '');
+        formData.append('PoItem', $('#poItem').val() || '');
+        formData.append('StateId', $('#state').val() || '');
+        formData.append('DstrctIn', $('#dstrctIn').val() || '');
         
         // Add file if selected
         const fileInput = $('#fotoFile')[0];
@@ -537,6 +792,17 @@
         $('#scan_kategoriBarang').val(data.kategoriBarang);
         $('#scan_foto').val(data.foto);
         $('#scan_qty').val(1); // Default quantity
+        
+        // Handle serial number from QR data
+        if (data.serialNumber) {
+            $('#scan_manualSerial').prop('checked', true);
+            $('#scan_manualSerial').trigger('change'); // Trigger the change event to show manual input
+            $('#scan_serialNumbers').val(data.serialNumber);
+        } else {
+            $('#scan_manualSerial').prop('checked', false);
+            $('#scan_manualSerial').trigger('change'); // Trigger the change event to hide manual input
+            $('#scan_serialNumbers').val('');
+        }
     }
 
     function showScannedForm() {
@@ -635,6 +901,19 @@
         formData.append('KodeBarang', kodeBarang);
         formData.append('KategoriBarang', $('#scan_kategoriBarang').val());
         formData.append('Qty', parseInt($('#scan_qty').val()));
+        
+        // Add manual serial data
+        const isManualSerial = $('#scan_manualSerial').is(':checked');
+        formData.append('ManualSerial', isManualSerial);
+        if (isManualSerial) {
+            formData.append('SerialNumbers', $('#scan_serialNumbers').val().trim());
+        }
+        
+        // Add PO data
+        formData.append('PoNumber', $('#scan_poNumber').val() || '');
+        formData.append('PoItem', $('#scan_poItem').val() || '');
+        formData.append('StateId', $('#scan_state').val() || '');
+        formData.append('DstrctIn', $('#scan_dstrctIn').val() || '');
         
         // Add file if selected
         const fileInput = $('#scan_fotoFile')[0];
@@ -971,6 +1250,60 @@
             }
         } catch (error) {
             console.error('Error loading categories:', error);
+        }
+    }
+    
+    async function loadStates() {
+        try {
+            const response = await fetch('/api/AssetIn/GetStates');
+            const result = await response.json();
+            
+            if (result.success) {
+                const stateSelects = ['#state', '#scan_state'];
+                
+                stateSelects.forEach(selector => {
+                    const selectElement = $(selector);
+                    if (selectElement.length) {
+                        // Keep the first option (placeholder)
+                        const placeholder = selectElement.find('option:first');
+                        selectElement.empty().append(placeholder);
+                        
+                        // Add states from database
+                        result.data.forEach(state => {
+                            selectElement.append(`<option value="${state.value}">${state.text}</option>`);
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error loading states:', error);
+        }
+    }
+    
+    async function loadDistricts() {
+        try {
+            const response = await fetch('/api/AssetIn/GetDistricts');
+            const result = await response.json();
+            
+            if (result.success) {
+                const districtSelects = ['#dstrctIn', '#scan_dstrctIn'];
+                
+                districtSelects.forEach(selector => {
+                    const selectElement = $(selector);
+                    if (selectElement.length) {
+                        // Keep the first option (placeholder)
+                        const placeholder = selectElement.find('option:first');
+                        selectElement.empty().append(placeholder);
+                        
+                        // Add districts from database
+                        result.data.forEach(district => {
+                            selectElement.append(`<option value="${district.value}">${district.text}</option>`);
+                        });
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error loading districts:', error);
         }
     }
 });
