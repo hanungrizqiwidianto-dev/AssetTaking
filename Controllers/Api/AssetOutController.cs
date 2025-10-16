@@ -21,6 +21,35 @@ namespace AssetTaking.Controllers.Api
         {
             try
             {
+                // Validasi wajib isi State dan District Out
+                if (string.IsNullOrEmpty(request.State))
+                {
+                    return BadRequest(new { Remarks = false, Message = "State/Kondisi harus diisi" });
+                }
+
+                if (string.IsNullOrEmpty(request.DstrctOut))
+                {
+                    return BadRequest(new { Remarks = false, Message = "District Out harus diisi" });
+                }
+
+                // Validasi jumlah serial numbers yang dipilih harus sama dengan qty
+                if (request.SelectedSerials != null && request.SelectedSerials.Count != request.Qty)
+                {
+                    return BadRequest(new { 
+                        Remarks = false, 
+                        Message = $"Jumlah serial numbers yang dipilih ({request.SelectedSerials.Count}) harus sama dengan quantity ({request.Qty})" 
+                    });
+                }
+
+                // Validasi jumlah PO items yang dipilih harus sama dengan qty (jika ada PO yang dipilih)
+                if (request.SelectedPos != null && request.SelectedPos.Count > 0 && request.SelectedPos.Count != request.Qty)
+                {
+                    return BadRequest(new { 
+                        Remarks = false, 
+                        Message = $"Jumlah PO items yang dipilih ({request.SelectedPos.Count}) harus sama dengan quantity ({request.Qty})" 
+                    });
+                }
+
                 using var transaction = _context.Database.BeginTransaction();
 
                 var sourceAsset = _context.TblTAssetIns
@@ -224,6 +253,23 @@ namespace AssetTaking.Controllers.Api
                     return Ok(new { 
                         success = false, 
                         message = "QR Scan harus mengandung Nama Barang, Nomor Asset, dan Kode Barang" 
+                    });
+                }
+
+                // Validasi wajib isi State dan District Out untuk QR scan
+                if (string.IsNullOrEmpty(request.State))
+                {
+                    return Ok(new { 
+                        success = false, 
+                        message = "State/Kondisi harus diisi" 
+                    });
+                }
+
+                if (string.IsNullOrEmpty(request.DstrctOut))
+                {
+                    return Ok(new { 
+                        success = false, 
+                        message = "District Out harus diisi" 
                     });
                 }
 

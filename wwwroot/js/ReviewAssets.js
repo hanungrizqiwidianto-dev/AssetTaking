@@ -38,6 +38,8 @@ $(document).ready(function () {
                                    data-nama="${row.namaBarang}"
                                    data-kategori="${row.kategoriBarang}"
                                    data-qty="${row.qty}"
+                                   data-state="${row.state || ''}"
+                                   data-district="${row.district || ''}"
                                    title="Generate QR Code">
                                    <i class="fa fa-qrcode"></i>
                                 </button>
@@ -170,6 +172,8 @@ $(document).ready(function () {
                                                 data-kode="${asset.kodeBarang}"
                                                 data-kategori="${asset.kategoriBarang}"
                                                 data-qty="${asset.qty}"
+                                                data-state="${assetGroup.state || ''}"
+                                                data-district="${assetGroup.district || ''}"
                                                 title="Generate QR Code">
                                                 <i class="fa fa-qrcode"></i> Generate QR
                                             </button>
@@ -239,8 +243,10 @@ $(document).ready(function () {
         const kodeBarang = $(this).data('kode');
         const kategoriBarang = $(this).data('kategori');
         const qty = $(this).data('qty');
+        const state = $(this).data('state');
+        const district = $(this).data('district');
         
-        generateQRFromAsset(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty);
+        generateQRFromAsset(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty, state, district);
     });
 
     // Handle generate QR button click (from modal detail)
@@ -250,8 +256,10 @@ $(document).ready(function () {
         const kodeBarang = $(this).data('kode');
         const kategoriBarang = $(this).data('kategori');
         const qty = $(this).data('qty');
+        const state = $(this).data('state');
+        const district = $(this).data('district');
         
-        generateQRFromAsset(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty);
+        generateQRFromAsset(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty, state, district);
     });
 
     // Show edit asset modal
@@ -535,7 +543,7 @@ $(document).ready(function () {
     }
 
     // Function untuk generate QR dari asset data
-    function generateQRFromAsset(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty) {
+    function generateQRFromAsset(namaBarang, nomorAsset, kodeBarang, kategoriBarang, qty, state, district) {
         // Encode parameters untuk URL
         const params = new URLSearchParams({
             nama: namaBarang || '',
@@ -543,6 +551,8 @@ $(document).ready(function () {
             kode: kodeBarang || '',
             kategori: kategoriBarang || '',
             qty: qty || '1',
+            state: state || '',
+            district: district || '',
             fromReview: 'true',  // Flag untuk menandakan generate dari review
             fromSerial: 'false'  // Flag untuk menandakan bukan dari serial specific
         });

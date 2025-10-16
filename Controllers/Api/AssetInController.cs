@@ -241,6 +241,17 @@ namespace AssetTaking.Controllers.Api
         {
             try
             {
+                // Validasi wajib isi State dan District In
+                if (string.IsNullOrEmpty(request.State))
+                {
+                    return BadRequest(new { Remarks = false, Message = "State/Kondisi harus diisi" });
+                }
+
+                if (string.IsNullOrEmpty(request.DstrctIn))
+                {
+                    return BadRequest(new { Remarks = false, Message = "District In harus diisi" });
+                }
+
                 using var transaction = _context.Database.BeginTransaction();
 
                 string? fotoPath = null;
@@ -523,6 +534,23 @@ namespace AssetTaking.Controllers.Api
                     });
                 }
 
+                // Validasi wajib isi State dan District In untuk QR scan
+                if (string.IsNullOrEmpty(request.State))
+                {
+                    return Ok(new { 
+                        success = false, 
+                        message = "State/Kondisi harus diisi" 
+                    });
+                }
+
+                if (string.IsNullOrEmpty(request.DstrctIn))
+                {
+                    return Ok(new { 
+                        success = false, 
+                        message = "District In harus diisi" 
+                    });
+                }
+
                 string? fotoPath = null;
 
                 // Handle file upload if provided
@@ -650,22 +678,35 @@ namespace AssetTaking.Controllers.Api
                     if (request.ManualSerial && !string.IsNullOrEmpty(request.SerialNumbers))
                     {
                         // Use manual serial numbers from QR scan
-                        serialNumbers = request.SerialNumbers
+                        var inputSerials = request.SerialNumbers
                             .Split(',')
                             .Select(s => s.Trim())
                             .Where(s => !string.IsNullOrEmpty(s))
                             .ToList();
                             
-                        // Validate that we have enough serial numbers for the quantity
-                        if (serialNumbers.Count != request.Qty)
+                        // If qty is edited and we don't have enough serial numbers, auto-generate the rest
+                        if (inputSerials.Count < request.Qty)
                         {
-                            return Ok(new { 
-                                success = false, 
-                                message = $"QR Scan: Jumlah serial number ({serialNumbers.Count}) harus sama dengan quantity ({request.Qty})" 
-                            });
+                            // Use existing serial numbers and generate additional ones
+                            serialNumbers = new List<string>(inputSerials);
+                            
+                            // Generate additional serial numbers for the remaining quantity
+                            int additionalCount = request.Qty - inputSerials.Count;
+                            var additionalSerials = GenerateSerialNumbers(request.KategoriBarang, additionalCount);
+                            serialNumbers.AddRange(additionalSerials);
+                        }
+                        else if (inputSerials.Count > request.Qty)
+                        {
+                            // Take only the first qty number of serials
+                            serialNumbers = inputSerials.Take(request.Qty).ToList();
+                        }
+                        else
+                        {
+                            // Exact match
+                            serialNumbers = inputSerials;
                         }
                         
-                        // Check for duplicate serial numbers in input
+                        // Check for duplicate serial numbers in final list
                         var duplicateSerials = serialNumbers.GroupBy(x => x).Where(g => g.Count() > 1).Select(g => g.Key);
                         if (duplicateSerials.Any())
                         {
@@ -675,7 +716,7 @@ namespace AssetTaking.Controllers.Api
                             });
                         }
                         
-                        // Check if serial numbers already exist in database
+                        // Check if serial numbers already exist in database and make them unique
                         var existingSerials = await _context.TblRAssetSerials
                             .Where(s => serialNumbers.Contains(s.SerialNumber))
                             .Select(s => s.SerialNumber)
@@ -683,10 +724,27 @@ namespace AssetTaking.Controllers.Api
                             
                         if (existingSerials.Any())
                         {
-                            return Ok(new { 
-                                success = false, 
-                                message = $"QR Scan: Serial number sudah ada di database: {string.Join(", ", existingSerials)}" 
-                            });
+                            // Instead of failing, make serial numbers unique by appending suffix
+                            for (int i = 0; i < serialNumbers.Count; i++)
+                            {
+                                if (existingSerials.Contains(serialNumbers[i]))
+                                {
+                                    // Find a unique suffix
+                                    int suffix = 1;
+                                    string baseSerial = serialNumbers[i];
+                                    string newSerial;
+                                    
+                                    do
+                                    {
+                                        newSerial = $"{baseSerial}-{suffix:D2}";
+                                        suffix++;
+                                    }
+                                    while (await _context.TblRAssetSerials.AnyAsync(s => s.SerialNumber == newSerial) || 
+                                           serialNumbers.Contains(newSerial));
+                                    
+                                    serialNumbers[i] = newSerial;
+                                }
+                            }
                         }
                     }
                     else

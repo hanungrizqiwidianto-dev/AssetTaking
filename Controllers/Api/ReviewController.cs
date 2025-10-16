@@ -47,6 +47,12 @@ namespace AssetTaking.Controllers.Api
                                  g.SelectMany(x => x.TblRAssetPos).First().PoItem : null,
                         DstrctIn = g.First().DstrctIn,
                         DstrctOut = g.First().DstrctOut,
+                        // Add state and district from serial records
+                        State = g.SelectMany(x => x.TblRAssetSerials)
+                               .Where(s => s.Status == 1 && !string.IsNullOrEmpty(s.State))
+                               .Select(s => s.State)
+                               .FirstOrDefault(),
+                        District = g.First().DstrctIn, // Use DstrctIn as district
                         SerialNumbers = g.SelectMany(x => x.TblRAssetSerials)
                                          .Where(s => s.Status == 1)
                                          .Select(s => s.SerialNumber)
