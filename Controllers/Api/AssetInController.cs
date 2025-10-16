@@ -926,49 +926,16 @@ namespace AssetTaking.Controllers.Api
 
         private string GetCategoryCode(string kategoriBarang)
         {
-            // Use the same logic as GenerateItemCodeByCategory
-            string prefix = "";
+            if (string.IsNullOrWhiteSpace(kategoriBarang))
+                return "GEN";
+
+            // Remove any spaces and take first 3 characters, convert to uppercase
+            string cleanCategory = kategoriBarang.Replace(" ", "").ToUpper();
             
-            // Generate prefix based on category
-            switch (kategoriBarang.ToUpper())
-            {
-                case "RND":
-                case "R&D":
-                case "RESEARCH AND DEVELOPMENT":
-                    prefix = "RND";
-                    break;
-                case "SPARE PART":
-                case "SPAREPART":
-                case "SP":
-                    prefix = "SPA";
-                    break;
-                case "ELEKTRONIK":
-                case "ELECTRONIC":
-                case "ELK":
-                    prefix = "ELK";
-                    break;
-                case "FURNITURE":
-                case "FURNITUR":
-                case "FRN":
-                    prefix = "FRN";
-                    break;
-                case "KENDARAAN":
-                case "VEHICLE":
-                case "VHC":
-                    prefix = "VHC";
-                    break;
-                case "PERALATAN":
-                case "EQUIPMENT":
-                case "EQP":
-                    prefix = "EQP";
-                    break;
-                default:
-                    // Use first 3 characters of category as prefix
-                    prefix = kategoriBarang.Length >= 3 
-                        ? kategoriBarang.Substring(0, 3).ToUpper() 
-                        : kategoriBarang.ToUpper();
-                    break;
-            }
+            // Use first 3 characters as prefix, pad with 'X' if less than 3 characters
+            string prefix = cleanCategory.Length >= 3 
+                ? cleanCategory.Substring(0, 3) 
+                : cleanCategory.PadRight(3, 'X');
 
             return prefix;
         }

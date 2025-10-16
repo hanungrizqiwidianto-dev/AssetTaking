@@ -550,6 +550,8 @@ $(document).ready(function () {
             kategori: kategoriBarang || '',
             qty: '1',  // Dari serial specific, qty harus 1
             serial: serialNumber || '',  // Tambahan serial number
+            state: '',  // State tidak tersedia di asset detail modal
+            district: '',  // District tidak tersedia di asset detail modal
             fromReview: 'true',
             fromSerial: 'true'  // Flag untuk menandakan generate dari serial specific
         });

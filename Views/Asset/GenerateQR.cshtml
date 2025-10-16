@@ -322,7 +322,10 @@
                                             kategoriBarang = ViewBag.KategoriBarang, 
                                             kodeBarang = ViewBag.KodeBarang,
                                             qty = ViewBag.Qty,
-                                            qrData = ViewBag.QRData 
+                                            qrData = ViewBag.QRData,
+                                            serialNumber = ViewBag.SerialNumber,
+                                            state = ViewBag.State,
+                                            district = ViewBag.District
                                         })" class="btn btn-success btn-lg px-4 py-2" target="_blank">
                                             <i class="fa fa-print me-2"></i> Print Label
                                         </a>
@@ -668,6 +671,11 @@ function downloadLabel() {
     var kodeBarang = '@ViewBag.KodeBarang';
     var qty = '@ViewBag.Qty';
     var qrData = '@ViewBag.QRData';
+    var serialNumber = '@ViewBag.SerialNumber';
+    var poNumber = '@ViewBag.PoNumber';
+    var poItem = '@ViewBag.PoItem';
+    var state = '@ViewBag.State';
+    var district = '@ViewBag.District';
     
     if (!qrData) {
         Swal.fire({
@@ -772,6 +780,51 @@ function downloadLabel() {
         ctx.fillText('Quantity:', startX, currentY);
         ctx.font = '10px Arial';
         ctx.fillText(qty, startX + 80, currentY);
+        currentY += lineHeight;
+    }
+    
+    // Serial Number (if exists)
+    if (serialNumber && serialNumber.trim() !== '') {
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('Serial Number:', startX, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(serialNumber, startX + 90, currentY);
+        currentY += lineHeight;
+    }
+    
+    // PO Number (if exists)
+    if (poNumber && poNumber.trim() !== '') {
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('PO Number:', startX, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(poNumber, startX + 80, currentY);
+        currentY += lineHeight;
+    }
+    
+    // PO Item (if exists)
+    if (poItem && poItem.trim() !== '') {
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('PO Item:', startX, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(poItem, startX + 70, currentY);
+        currentY += lineHeight;
+    }
+    
+    // State (if exists)
+    if (state && state.trim() !== '') {
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('State:', startX, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(state, startX + 50, currentY);
+        currentY += lineHeight;
+    }
+    
+    // District (if exists)
+    if (district && district.trim() !== '') {
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('District:', startX, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(district, startX + 60, currentY);
         currentY += lineHeight;
     }
     
@@ -935,32 +988,81 @@ function downloadNextLabel(batchData, index, progressDiv) {
         ctx.drawImage(qrImg, 20, 60, 120, 120);
         
         // Asset details
-        ctx.font = 'bold 14px Arial';
+        ctx.font = 'bold 11px Arial';
         ctx.textAlign = 'left';
         ctx.fillStyle = '#333333';
         
         // Right side details
         var startY = 70;
-        var lineHeight = 20;
+        var lineHeight = 16;
+        var currentY = startY;
         
-        ctx.fillText('Kode Barang:', 160, startY);
-        ctx.font = '12px Arial';
-        ctx.fillText(item.kodeBarang || '', 160, startY + 15);
+        // Kode Barang
+        ctx.fillText('Kode Barang:', 160, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(item.kodeBarang || '', 250, currentY);
+        currentY += lineHeight;
         
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText('Nama Barang:', 160, startY + 35);
-        ctx.font = '12px Arial';
-        ctx.fillText(item.namaBarang || '', 160, startY + 50);
+        // Nama Barang
+        ctx.font = 'bold 11px Arial';
+        ctx.fillText('Nama Barang:', 160, currentY);
+        ctx.font = '10px Arial';
+        ctx.fillText(item.namaBarang || '', 250, currentY);
+        currentY += lineHeight;
         
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText('Kategori:', 160, startY + 70);
-        ctx.font = '12px Arial';
-        ctx.fillText(item.kategori || '', 160, startY + 85);
+        // Kategori
+        if (item.kategoriBarang) {
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('Kategori:', 160, currentY);
+            ctx.font = '10px Arial';
+            ctx.fillText(item.kategoriBarang || '', 220, currentY);
+            currentY += lineHeight;
+        }
         
-        ctx.font = 'bold 14px Arial';
-        ctx.fillText('Lokasi:', 160, startY + 105);
-        ctx.font = '12px Arial';
-        ctx.fillText(item.lokasi || '', 160, startY + 120);
+        // Serial Number
+        if (item.serialNumber) {
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('Serial Number:', 160, currentY);
+            ctx.font = '10px Arial';
+            ctx.fillText(item.serialNumber || '', 250, currentY);
+            currentY += lineHeight;
+        }
+        
+        // PO Number
+        if (item.poNumber) {
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('PO Number:', 160, currentY);
+            ctx.font = '10px Arial';
+            ctx.fillText(item.poNumber || '', 230, currentY);
+            currentY += lineHeight;
+        }
+        
+        // PO Item
+        if (item.poItem) {
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('PO Item:', 160, currentY);
+            ctx.font = '10px Arial';
+            ctx.fillText(item.poItem || '', 210, currentY);
+            currentY += lineHeight;
+        }
+        
+        // State
+        if (item.state) {
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('State:', 160, currentY);
+            ctx.font = '10px Arial';
+            ctx.fillText(item.state || '', 200, currentY);
+            currentY += lineHeight;
+        }
+        
+        // District
+        if (item.district) {
+            ctx.font = 'bold 11px Arial';
+            ctx.fillText('District:', 160, currentY);
+            ctx.font = '10px Arial';
+            ctx.fillText(item.district || '', 210, currentY);
+            currentY += lineHeight;
+        }
         
         // Bottom info
         ctx.font = '10px Arial';

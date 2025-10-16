@@ -671,7 +671,7 @@ namespace AssetTaking.Controllers
             return RedirectToAction("AssetOut");
         }
 
-        public async Task<IActionResult> GenerateQR(string nama = "", string nomor = "", string kode = "", string kategori = "", int? qty = null, string serial = "", bool fromReview = false, bool fromSerial = false, string state = "", string district = "")
+        public async Task<IActionResult> GenerateQR(string nama = "", string nomor = "", string kode = "", string kategori = "", int? qty = null, string serial = "", bool fromReview = false, bool fromSerial = false, string state = "", string district = "", string poNumber = "", string poItem = "")
         {
             if (HttpContext.Session.GetString("Nrp") == null)
                 return RedirectToAction("Index", "Login");
@@ -706,6 +706,8 @@ namespace AssetTaking.Controllers
             ViewBag.PreSerialNumber = serial;
             ViewBag.PreState = state;
             ViewBag.PreDistrict = district;
+            ViewBag.PrePoNumber = poNumber;
+            ViewBag.PrePoItem = poItem;
             ViewBag.FromReview = fromReview;
             ViewBag.FromSerial = fromSerial;
             
@@ -714,7 +716,7 @@ namespace AssetTaking.Controllers
 
         [HttpPost]
         [ActionName("GenerateQR")]
-        public async Task<IActionResult> GenerateQRPost(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string generateMode = "single", string serial = "", bool fromReview = false, bool fromSerial = false, string state = "", string district = "")
+        public async Task<IActionResult> GenerateQRPost(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string generateMode = "single", string serial = "", bool fromReview = false, bool fromSerial = false, string state = "", string district = "", string poNumber = "", string poItem = "")
         {
             try
             {
@@ -807,6 +809,8 @@ namespace AssetTaking.Controllers
                             ["serialNumber"] = serialNumber,
                             ["state"] = state ?? "",
                             ["district"] = district ?? "",
+                            ["poNumber"] = poNumber ?? "",
+                            ["poItem"] = !string.IsNullOrEmpty(poItem) ? $"{poItem}-{i:D3}" : "",
                             ["batchNumber"] = i,
                             ["totalBatch"] = qty.Value
                         };
@@ -884,6 +888,8 @@ namespace AssetTaking.Controllers
                     ViewBag.Qty = qty;
                     ViewBag.SerialNumber = serialNumber;
                     ViewBag.QRData = qrData;
+                    ViewBag.State = state;
+                    ViewBag.District = district;
                     ViewBag.FromReview = fromReview;
                     ViewBag.FromSerial = fromSerial;
                     ViewBag.Success = "QR Code berhasil digenerate!";
@@ -969,7 +975,9 @@ namespace AssetTaking.Controllers
         }
 
         [HttpGet]
-        public IActionResult PrintLabel(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, int? qty, string qrData, string batchData)
+        public IActionResult PrintLabel(string namaBarang, string nomorAsset, string kategoriBarang, string kodeBarang, 
+            int? qty, string qrData, string batchData, string? serialNumber = null, string? poNumber = null, 
+            string? poItem = null, string? state = null, string? district = null)
         {
             ViewBag.NamaBarang = namaBarang;
             ViewBag.NomorAsset = nomorAsset;
@@ -977,6 +985,11 @@ namespace AssetTaking.Controllers
             ViewBag.KodeBarang = kodeBarang;
             ViewBag.Qty = qty;
             ViewBag.QRData = qrData;
+            ViewBag.SerialNumber = serialNumber;
+            ViewBag.PoNumber = poNumber;
+            ViewBag.PoItem = poItem;
+            ViewBag.State = state;
+            ViewBag.District = district;
 
             // Handle batch data
             if (!string.IsNullOrEmpty(batchData))
@@ -1021,19 +1034,18 @@ namespace AssetTaking.Controllers
 
         private string GetCategoryCode(string kategoriBarang)
         {
-            return kategoriBarang?.ToUpper() switch
-            {
-                "RND" => "RND",
-                "SPAREPART" => "SPR",
-                "TOOLS" => "TLS",
-                "EQUIPMENT" => "EQP",
-                "FURNITURE" => "FUR",
-                "ELECTRONICS" => "ELC",
-                "AUTOMOTIVE" => "AUT",
-                "SAFETY" => "SFT",
-                "CONSUMABLE" => "CON",
-                _ => "GEN" // General category for unknown types
-            };
+            if (string.IsNullOrWhiteSpace(kategoriBarang))
+                return "GEN";
+
+            // Remove any spaces and take first 3 characters, convert to uppercase
+            string cleanCategory = kategoriBarang.Replace(" ", "").ToUpper();
+            
+            // Use first 3 characters as prefix, pad with 'X' if less than 3 characters
+            string prefix = cleanCategory.Length >= 3 
+                ? cleanCategory.Substring(0, 3) 
+                : cleanCategory.PadRight(3, 'X');
+
+            return prefix;
         }
     }
 }

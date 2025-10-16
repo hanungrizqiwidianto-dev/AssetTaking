@@ -253,6 +253,38 @@
                                 <span class="info-value serial-number">@item["serialNumber"]</span>
                             </div>
                         }
+                        
+                        @if (item.ContainsKey("poNumber") && !string.IsNullOrEmpty(item["poNumber"]?.ToString()))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">PO Number:</span>
+                                <span class="info-value">@item["poNumber"]</span>
+                            </div>
+                        }
+                        
+                        @if (item.ContainsKey("poItem") && !string.IsNullOrEmpty(item["poItem"]?.ToString()))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">PO Item:</span>
+                                <span class="info-value">@item["poItem"]</span>
+                            </div>
+                        }
+                        
+                        @if (item.ContainsKey("state") && !string.IsNullOrEmpty(item["state"]?.ToString()))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">State:</span>
+                                <span class="info-value">@item["state"]</span>
+                            </div>
+                        }
+                        
+                        @if (item.ContainsKey("district") && !string.IsNullOrEmpty(item["district"]?.ToString()))
+                        {
+                            <div class="info-row">
+                                <span class="info-label">District:</span>
+                                <span class="info-value">@item["district"]</span>
+                            </div>
+                        }
                     </div>
                 </div>
                 
@@ -319,6 +351,38 @@
                         <div class="info-row">
                             <span class="info-label">Serial Number:</span>
                             <span class="info-value serial-number">@ViewBag.SerialNumber</span>
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(ViewBag.PoNumber))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">PO Number:</span>
+                            <span class="info-value">@ViewBag.PoNumber</span>
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(ViewBag.PoItem))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">PO Item:</span>
+                            <span class="info-value">@ViewBag.PoItem</span>
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(ViewBag.State))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">State:</span>
+                            <span class="info-value">@ViewBag.State</span>
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(ViewBag.District))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">District:</span>
+                            <span class="info-value">@ViewBag.District</span>
                         </div>
                     }
                 </div>

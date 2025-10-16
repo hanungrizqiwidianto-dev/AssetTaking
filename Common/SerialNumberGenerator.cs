@@ -86,19 +86,18 @@ namespace AssetTaking.Common
         /// <returns>Category code</returns>
         private static string GetCategoryCode(string kategoriBarang)
         {
-            return kategoriBarang?.ToUpper() switch
-            {
-                "RND" => "RND",
-                "SPAREPART" => "SPR",
-                "TOOLS" => "TLS",
-                "EQUIPMENT" => "EQP",
-                "FURNITURE" => "FUR",
-                "ELECTRONICS" => "ELC",
-                "AUTOMOTIVE" => "AUT",
-                "SAFETY" => "SFT",
-                "CONSUMABLE" => "CON",
-                _ => "GEN" // General category for unknown types
-            };
+            if (string.IsNullOrWhiteSpace(kategoriBarang))
+                return "GEN";
+
+            // Remove any spaces and take first 3 characters, convert to uppercase
+            string cleanCategory = kategoriBarang.Replace(" ", "").ToUpper();
+            
+            // Use first 3 characters as prefix, pad with 'X' if less than 3 characters
+            string prefix = cleanCategory.Length >= 3 
+                ? cleanCategory.Substring(0, 3) 
+                : cleanCategory.PadRight(3, 'X');
+
+            return prefix;
         }
 
         /// <summary>
@@ -111,16 +110,14 @@ namespace AssetTaking.Common
             if (string.IsNullOrWhiteSpace(serialNumber))
                 return false;
 
-            // Check if it matches the pattern: 3+ letters followed by 5 digits
-            var validPrefixes = new[] { "RND", "SPR", "TLS", "EQP", "FUR", "ELC", "AUT", "SFT", "CON", "GEN" };
-            
-            foreach (var prefix in validPrefixes)
+            // Check if it matches the pattern: 3 letters followed by 5 digits
+            if (serialNumber.Length == 8)
             {
-                if (serialNumber.StartsWith(prefix) && serialNumber.Length == prefix.Length + 5)
-                {
-                    string numericPart = serialNumber.Substring(prefix.Length);
-                    return int.TryParse(numericPart, out _);
-                }
+                string prefix = serialNumber.Substring(0, 3);
+                string numericPart = serialNumber.Substring(3);
+                
+                // Check if prefix contains only letters and numeric part contains only digits
+                return prefix.All(char.IsLetter) && numericPart.All(char.IsDigit);
             }
 
             return false;
@@ -133,20 +130,11 @@ namespace AssetTaking.Common
         /// <returns>Category code</returns>
         public static string GetCategoryFromSerial(string serialNumber)
         {
-            if (string.IsNullOrWhiteSpace(serialNumber))
+            if (string.IsNullOrWhiteSpace(serialNumber) || serialNumber.Length < 3)
                 return "GEN";
 
-            var validPrefixes = new[] { "RND", "SPR", "TLS", "EQP", "FUR", "ELC", "AUT", "SFT", "CON", "GEN" };
-            
-            foreach (var prefix in validPrefixes)
-            {
-                if (serialNumber.StartsWith(prefix))
-                {
-                    return prefix;
-                }
-            }
-
-            return "GEN";
+            // Extract first 3 characters as category code
+            return serialNumber.Substring(0, 3).ToUpper();
         }
     }
 }
