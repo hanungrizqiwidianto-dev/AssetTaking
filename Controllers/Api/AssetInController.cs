@@ -98,6 +98,7 @@ namespace AssetTaking.Controllers.Api
                 var serialNumbers = GenerateSerialNumbers(request.KategoriBarang, request.Quantity);
                 return Ok(new { 
                     success = true, 
+                    data = serialNumbers,
                     serialNumbers = serialNumbers,
                     serialNumbersText = string.Join(", ", serialNumbers)
                 });
@@ -249,11 +250,33 @@ namespace AssetTaking.Controllers.Api
             return state;
         }
 
+        private async Task<string?> ResolveStateFromString(string? stateValue)
+        {
+            if (string.IsNullOrEmpty(stateValue))
+                return null;
+
+            // If State looks like a number (e.g., "1", "2"), treat it as StateId
+            if (int.TryParse(stateValue, out int stateId))
+            {
+                return await GetStateFromId(stateValue);
+            }
+            // Otherwise, use it as the actual state name
+            return stateValue;
+        }
+
         private async Task<string?> ResolveState(AssetInRequest request)
         {
-            // If State is provided directly, use it
+            // If State is provided directly, check if it's a number (might be StateId)
             if (!string.IsNullOrEmpty(request.State))
+            {
+                // If State looks like a number (e.g., "1", "2"), treat it as StateId
+                if (int.TryParse(request.State, out int stateIdFromState))
+                {
+                    return await GetStateFromId(request.State);
+                }
+                // Otherwise, use it as the actual state name
                 return request.State;
+            }
 
             // If StateId is provided, resolve it to State name
             if (!string.IsNullOrEmpty(request.StateId))
@@ -458,7 +481,7 @@ namespace AssetTaking.Controllers.Api
                         {
                             AssetId = savedAsset.AssetId, // Use AssetId instead of Id
                             SerialNumber = serialNumber,
-                            State = !string.IsNullOrEmpty(resolvedState) ? resolvedState : "In Use", // Default to "In Use" if not provided
+                            State = !string.IsNullOrEmpty(resolvedState) ? resolvedState : "Good", // Default to "Good" if not provided
                             Status = 1, // Active
                             Notes = request.ManualSerial ? "Manual input" : $"Auto-generated for {request.KategoriBarang} category",
                             CreatedAt = DateTime.Now,
@@ -544,6 +567,199 @@ namespace AssetTaking.Controllers.Api
             catch (Exception ex)
             {
                 return StatusCode(500, new { Remarks = false, Message = ex.Message });
+            }
+        }
+
+        [HttpPost("CreateWithSteps")]
+        public async Task<IActionResult> CreateWithSteps([FromForm] AssetInStepRequest request, IFormFile? fotoFile)
+        {
+            try
+            {
+                // Resolve the state to get proper state name
+                var resolvedState = await ResolveStateFromString(request.State);
+                
+                // Validasi wajib isi State dan District In
+                if (string.IsNullOrEmpty(request.State))
+                {
+                    return BadRequest(new { success = false, message = "State/Kondisi harus diisi" });
+                }
+
+                if (string.IsNullOrEmpty(request.DstrctIn))
+                {
+                    return BadRequest(new { success = false, message = "District In harus diisi" });
+                }
+
+                // Validasi serial numbers dan PO items
+                if (request.SerialNumbers == null || request.SerialNumbers.Count == 0)
+                {
+                    return BadRequest(new { success = false, message = "Serial numbers harus ada" });
+                }
+
+                if (request.SerialNumbers.Count != request.Qty)
+                {
+                    return BadRequest(new { success = false, message = "Jumlah serial numbers harus sama dengan quantity" });
+                }
+
+                using var transaction = _context.Database.BeginTransaction();
+
+                string? fotoPath = null;
+
+                // Handle file upload if provided
+                if (fotoFile != null && fotoFile.Length > 0)
+                {
+                    // Validate file type
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+                    var fileExtension = Path.GetExtension(fotoFile.FileName).ToLowerInvariant();
+                    
+                    if (!allowedExtensions.Contains(fileExtension))
+                    {
+                        return BadRequest(new { success = false, message = "Format file tidak didukung. Gunakan JPG, JPEG, PNG, atau GIF." });
+                    }
+
+                    // Validate file size (5MB max)
+                    if (fotoFile.Length > 5 * 1024 * 1024)
+                    {
+                        return BadRequest(new { success = false, message = "Ukuran file terlalu besar. Maksimal 5MB." });
+                    }
+
+                    // Create unique filename
+                    var fileName = $"asset_in_{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid().ToString("N")[..8]}{fileExtension}";
+                    var uploadsPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads");
+                    
+                    // Ensure directory exists
+                    if (!Directory.Exists(uploadsPath))
+                    {
+                        Directory.CreateDirectory(uploadsPath);
+                    }
+
+                    var filePath = Path.Combine(uploadsPath, fileName);
+
+                    // Save file
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await fotoFile.CopyToAsync(stream);
+                    }
+
+                    // Store relative path
+                    fotoPath = $"/uploads/{fileName}";
+                }
+
+                // Check if AssetIn already exists for the same code and increment quantity
+                var existingAssetIn = _context.TblTAssetIns
+                    .FirstOrDefault(a => a.NomorAsset == request.NomorAsset && a.KodeBarang == request.KodeBarang);
+
+                TblTAssetIn assetIn;
+                
+                if (existingAssetIn != null)
+                {
+                    // Update existing AssetIn quantity instead of creating new record
+                    existingAssetIn.Qty = (existingAssetIn.Qty ?? 0) + request.Qty;
+                    existingAssetIn.ModifiedAt = DateTime.Now;
+                    existingAssetIn.ModifiedBy = "system";
+                    
+                    // Update foto if new one is provided
+                    if (!string.IsNullOrEmpty(fotoPath))
+                    {
+                        existingAssetIn.Foto = fotoPath;
+                    }
+                    
+                    assetIn = existingAssetIn;
+                }
+                else
+                {
+                    // Create new AssetIn record
+                    assetIn = new TblTAssetIn
+                    {
+                        NamaBarang = request.NamaBarang,
+                        NomorAsset = request.NomorAsset,
+                        KodeBarang = request.KodeBarang,
+                        KategoriBarang = request.KategoriBarang,
+                        Qty = request.Qty,
+                        Foto = fotoPath,
+                        DstrctIn = request.DstrctIn,
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = "system"
+                    };
+                    _context.TblTAssetIns.Add(assetIn);
+                }
+                
+                _context.SaveChanges(); // Save to get/update the AssetIn ID
+
+                // Create single asset record with full quantity (like the original logic)
+                // Generate unique Id for primary key since it's not IDENTITY
+                var newId = GenerateNextAssetId();
+
+                var asset = new TblTAsset
+                {
+                    Id = newId, // Set manual ID since it's not IDENTITY
+                    // AssetId will be auto-generated by database (IDENTITY column)
+                    AssetInId = assetIn.Id, // Set the AssetInId reference
+                    NamaBarang = request.NamaBarang,
+                    TanggalMasuk = DateTime.Now,
+                    NomorAsset = request.NomorAsset,
+                    KodeBarang = request.KodeBarang,
+                    KategoriBarang = request.KategoriBarang,
+                    Qty = request.Qty, // Full quantity in single record
+                    Foto = fotoPath,
+                    Status = (int)StatusAsset.In,
+                    PoNumber = request.PoNumber,
+                    DstrctIn = request.DstrctIn,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "system"
+                };
+                _context.TblTAssets.Add(asset);
+                _context.SaveChanges(); // Save to get the Asset ID
+
+                // Create serial number records - one for each serial
+                for (int i = 0; i < request.SerialNumbers.Count; i++)
+                {
+                    var serialRecord = new TblRAssetSerial
+                    {
+                        AssetId = asset.AssetId, // Use the auto-generated AssetId
+                        SerialNumber = request.SerialNumbers[i],
+                        State = !string.IsNullOrEmpty(resolvedState) ? resolvedState : "Good", // Use resolved state or default
+                        Status = 1, // Asset In status
+                        CreatedAt = DateTime.Now,
+                        CreatedBy = "system"
+                    };
+                    _context.TblRAssetSerials.Add(serialRecord);
+                }
+
+                // Create PO records if PO Number provided - one record per serial number
+                if (!string.IsNullOrEmpty(request.PoNumber))
+                {
+                    // Create PO record for each serial number (mapping 1:1 with serial numbers)
+                    for (int i = 0; i < request.SerialNumbers.Count; i++)
+                    {
+                        // Get corresponding PO Item if exists, otherwise null
+                        string? poItem = null;
+                        if (request.PoItems != null && i < request.PoItems.Count)
+                        {
+                            // Treat empty strings as null for database consistency
+                            poItem = string.IsNullOrWhiteSpace(request.PoItems[i]) ? null : request.PoItems[i].Trim();
+                        }
+
+                        var poRecord = new TblRAssetPo
+                        {
+                            AssetId = asset.AssetId, // Use the auto-generated AssetId
+                            PoNumber = request.PoNumber,
+                            PoItem = poItem, // Can be null if not provided
+                            Status = 1, // Asset In status
+                            CreatedAt = DateTime.Now,
+                            CreatedBy = "system"
+                        };
+                        _context.TblRAssetPos.Add(poRecord);
+                    }
+                }
+
+                _context.SaveChanges();
+                transaction.Commit();
+
+                return Ok(new { success = true, message = "Asset In berhasil disimpan dengan detail serial numbers dan PO items" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = ex.Message });
             }
         }
 
@@ -792,7 +1008,7 @@ namespace AssetTaking.Controllers.Api
                         {
                             AssetId = savedAsset.AssetId, // Use AssetId (IDENTITY column)
                             SerialNumber = serialNumber,
-                            State = !string.IsNullOrEmpty(resolvedState) ? resolvedState : "In Use", // Use state from QR or default
+                            State = !string.IsNullOrEmpty(resolvedState) ? resolvedState : "Good", // Use state from QR or default
                             Status = 1, // Active
                             Notes = request.ManualSerial ? "From QR scan (manual)" : $"From QR scan (auto-generated for {request.KategoriBarang})",
                             CreatedAt = DateTime.Now,
@@ -988,6 +1204,20 @@ namespace AssetTaking.Controllers.Api
         public string? DstrctIn { get; set; }
         public bool ManualSerial { get; set; } = false;
         public string? SerialNumbers { get; set; }
+    }
+
+    public class AssetInStepRequest
+    {
+        public string NamaBarang { get; set; } = string.Empty;
+        public string NomorAsset { get; set; } = string.Empty;
+        public string KodeBarang { get; set; } = string.Empty;
+        public string KategoriBarang { get; set; } = string.Empty;
+        public int Qty { get; set; }
+        public string? PoNumber { get; set; }
+        public string? State { get; set; }
+        public string? DstrctIn { get; set; }
+        public List<string> SerialNumbers { get; set; } = new List<string>();
+        public List<string>? PoItems { get; set; } = new List<string>();
     }
 
     public class CheckDuplicateRequest

@@ -57,7 +57,6 @@
         if (selectedData && selectedData.id) {
             loadAssetDetailFromSelect2(selectedData);
             loadSerialNumbers(selectedData.id);
-            loadPoNumbers(selectedData.id);
             enableForm();
         } else {
             clearForm();
@@ -69,8 +68,12 @@
     $('#assetSelect').on('select2:clear', function() {
         clearForm();
         disableForm();
-        $('#serialNumbersContainer').empty();
-        $('#poNumbersContainer').empty();
+        $('#serialNumberSelect').val(null).trigger('change');
+    });
+
+    // Handle quantity input change
+    $('#qty').on('input change', function() {
+        updateFormValidation();
     });
 
     // Handle form reset
@@ -79,6 +82,7 @@
             clearForm();
             disableForm();
             $('#assetSelect').val(null).trigger('change');
+            $('#serialNumberSelect').val(null).trigger('change');
         }, 10);
     });
 
@@ -111,8 +115,8 @@
         }
 
         // Validate serial numbers selection
-        const selectedSerialsValidation = $('.serial-checkbox:checked');
-        if (selectedSerialsValidation.length !== qty) {
+        const selectedSerialsValidation = $('#serialNumberSelect').val();
+        if (!selectedSerialsValidation || selectedSerialsValidation.length !== qty) {
             Swal.fire({
                 title: 'Error!',
                 text: `Pilih ${qty} serial numbers sesuai dengan quantity yang diinginkan`,
@@ -122,12 +126,24 @@
             return;
         }
 
-        // Validate PO numbers selection
-        const selectedPoValidation = $('.po-checkbox:checked');
-        if (selectedPoValidation.length !== qty) {
+        // Validate state selection
+        const state = $('#state').val();
+        if (!state) {
             Swal.fire({
                 title: 'Error!',
-                text: `Pilih ${qty} PO numbers sesuai dengan quantity yang diinginkan`,
+                text: 'State/Kondisi harus diisi',
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+            return;
+        }
+
+        // Validate district out selection
+        const dstrctOut = $('#dstrctOut').val();
+        if (!dstrctOut) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'District Out harus diisi',
                 icon: 'error',
                 confirmButtonText: 'OK'
             });
@@ -140,27 +156,15 @@
         formData.append('Qty', qty);
         
         // Add state and district
-        const state = $('#state').val();
-        const dstrctOut = $('#dstrctOut').val();
-        if (state) formData.append('StateId', state);
-        if (dstrctOut) formData.append('DstrctOut', dstrctOut);
+        const stateText = $('#state option:selected').text();
+        
+        formData.append('State', stateText); // Send state text, not ID
+        formData.append('DstrctOut', dstrctOut);
         
         // Add selected serial numbers
-        const selectedSerials = $('.serial-checkbox:checked').map(function() {
-            return parseInt($(this).val());
-        }).get();
-        
+        const selectedSerials = $('#serialNumberSelect').val();
         selectedSerials.forEach((serialId, index) => {
             formData.append(`SelectedSerials[${index}]`, serialId);
-        });
-
-        // Add selected PO numbers
-        const selectedPos = $('.po-checkbox:checked').map(function() {
-            return parseInt($(this).val());
-        }).get();
-        
-        selectedPos.forEach((poId, index) => {
-            formData.append(`SelectedPos[${index}]`, poId);
         });
         
         // Add file if selected
@@ -367,7 +371,9 @@
         $('#kodeBarang').prop('disabled', false);
         $('#kategoriBarang').prop('disabled', false);
         $('#foto').prop('disabled', false);
-        $('#submitBtn').prop('disabled', false);
+        $('#serialNumberSelect').prop('disabled', false);
+        // Don't enable submit button here - let updateFormValidation handle it
+        updateFormValidation();
     }
 
     function disableForm() {
@@ -377,6 +383,7 @@
         $('#kodeBarang').prop('disabled', true);
         $('#kategoriBarang').prop('disabled', true);
         $('#foto').prop('disabled', true);
+        $('#serialNumberSelect').prop('disabled', true);
         $('#submitBtn').prop('disabled', true);
     }
 
@@ -391,6 +398,7 @@
         $('#fotoFile').val('');
         $('#imagePreview').hide();
         $('#currentImagePreview').hide();
+        $('#serialNumberSelect').val(null).trigger('change');
     }
 
     // Initialize form state
@@ -682,146 +690,91 @@
             const response = await fetch(`/api/AssetOut/GetSerialNumbers?assetId=${assetId}`);
             const result = await response.json();
             
+            // Clear and reset the dropdown
+            $('#serialNumberSelect').empty().prop('disabled', false);
+            $('#scan_serialNumberSelect').empty().prop('disabled', false);
+            
             if (result.success && result.data.length > 0) {
-                let html = '<div class="row">';
-                result.data.forEach((serial, index) => {
-                    html += `
-                        <div class="col-md-4 mb-2">
-                            <div class="form-check">
-                                <input class="form-check-input serial-checkbox" type="checkbox" 
-                                       value="${serial.serialId}" id="serial_${serial.serialId}"
-                                       data-serial-number="${serial.serialNumber}">
-                                <label class="form-check-label" for="serial_${serial.serialId}">
-                                    ${serial.serialNumber}
-                                </label>
-                            </div>
-                        </div>
-                    `;
+                // Add options to the dropdown
+                result.data.forEach((serial) => {
+                    const option = new Option(serial.serialNumber, serial.serialId, false, false);
+                    $('#serialNumberSelect').append(option);
+                    $('#scan_serialNumberSelect').append(option.cloneNode(true));
                 });
-                html += '</div>';
                 
-                $('#serialNumbersContainer').html(html);
-                
-                // Handle checkbox changes
-                $('.serial-checkbox').on('change', function() {
-                    updateSelectedSerials();
-                });
+                // Initialize Select2 on the dropdowns
+                initializeSerialNumberSelect();
             } else {
-                $('#serialNumbersContainer').html(
-                    '<div class="text-muted text-center"><i class="fa fa-info-circle me-1"></i>Tidak ada serial numbers tersedia</div>'
-                );
+                // Add empty option when no data
+                $('#serialNumberSelect').append('<option value="">Tidak ada serial numbers tersedia</option>');
+                $('#scan_serialNumberSelect').append('<option value="">Tidak ada serial numbers tersedia</option>');
             }
         } catch (error) {
             console.error('Error loading serial numbers:', error);
-            $('#serialNumbersContainer').html(
-                '<div class="text-danger text-center"><i class="fa fa-exclamation-triangle me-1"></i>Error loading serial numbers</div>'
-            );
+            $('#serialNumberSelect').append('<option value="">Error loading serial numbers</option>');
+            $('#scan_serialNumberSelect').append('<option value="">Error loading serial numbers</option>');
         }
     }
 
-    // Update selected serials display and validation
-    function updateSelectedSerials() {
-        const selectedSerials = $('.serial-checkbox:checked');
-        const maxQty = parseInt($('#qty').attr('max')) || 0;
-        
-        if (selectedSerials.length > maxQty) {
-            // Uncheck the last checked item if exceeds max
-            selectedSerials.last().prop('checked', false);
-            
-            Swal.fire({
-                title: 'Peringatan!',
-                text: `Maksimal ${maxQty} serial numbers yang dapat dipilih sesuai dengan quantity yang tersedia.`,
-                icon: 'warning',
-                confirmButtonText: 'OK'
-            });
-            return;
-        }
-        
-        updateFormValidation();
+    // Initialize Select2 for serial number dropdowns
+    function initializeSerialNumberSelect() {
+        $('#serialNumberSelect').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Pilih serial numbers...',
+            allowClear: true,
+            width: '100%',
+            closeOnSelect: false
+        });
+
+        $('#scan_serialNumberSelect').select2({
+            theme: 'bootstrap-5',
+            placeholder: 'Pilih serial numbers...',
+            allowClear: true,
+            width: '100%',
+            closeOnSelect: false
+        });
+
+        // Handle selection changes
+        $('#serialNumberSelect').on('change', function() {
+            updateFormValidation();
+        });
+
+        $('#scan_serialNumberSelect').on('change', function() {
+            updateScanFormValidation();
+        });
     }
 
-    // Load PO numbers for selected asset
-    async function loadPoNumbers(assetId) {
-        try {
-            const response = await fetch(`/api/AssetOut/GetPoNumbers?assetId=${assetId}`);
-            const result = await response.json();
-            
-            if (result.success && result.data.length > 0) {
-                let html = '<div class="row">';
-                result.data.forEach((po, index) => {
-                    html += `
-                        <div class="col-md-6 mb-2">
-                            <div class="form-check">
-                                <input class="form-check-input po-checkbox" type="checkbox" 
-                                       value="${po.id}" id="po_${po.id}"
-                                       data-po-number="${po.poNumber}" data-po-item="${po.poItem}">
-                                <label class="form-check-label" for="po_${po.id}">
-                                    ${po.display}
-                                </label>
-                            </div>
-                        </div>
-                    `;
-                });
-                html += '</div>';
-                
-                $('#poNumbersContainer').html(html);
-                
-                // Handle checkbox changes
-                $('.po-checkbox').on('change', function() {
-                    updateSelectedPos();
-                });
-            } else {
-                $('#poNumbersContainer').html(
-                    '<div class="text-muted text-center"><i class="fa fa-info-circle me-1"></i>Tidak ada PO numbers tersedia</div>'
-                );
-            }
-        } catch (error) {
-            console.error('Error loading PO numbers:', error);
-            $('#poNumbersContainer').html(
-                '<div class="text-danger text-center"><i class="fa fa-exclamation-triangle me-1"></i>Error loading PO numbers</div>'
-            );
-        }
-    }
 
-    // Update selected PO numbers display and validation
-    function updateSelectedPos() {
-        const selectedPos = $('.po-checkbox:checked');
-        const maxQty = parseInt($('#qty').attr('max')) || 0;
-        
-        if (selectedPos.length > maxQty) {
-            // Uncheck the last checked item if exceeds max
-            selectedPos.last().prop('checked', false);
-            
-            Swal.fire({
-                title: 'Peringatan!',
-                text: `Maksimal ${maxQty} PO numbers yang dapat dipilih sesuai dengan quantity yang tersedia.`,
-                icon: 'warning',
-                confirmButtonText: 'OK'
-            });
-            return;
-        }
-        
-        updateFormValidation();
-    }
 
-    // Update form validation based on serial numbers and PO numbers selection
+    // Update form validation based on serial numbers selection
     function updateFormValidation() {
-        const selectedSerials = $('.serial-checkbox:checked');
-        const selectedPos = $('.po-checkbox:checked');
+        const selectedSerials = $('#serialNumberSelect').val() || [];
         const currentQty = parseInt($('#qty').val()) || 0;
+        const assetSelected = $('#assetSelect').val();
         
-        // Update quantity field to match selected items
-        const serialsCount = selectedSerials.length;
-        const posCount = selectedPos.length;
+        // Enable submit button if:
+        // 1. Asset is selected
+        // 2. Quantity is greater than 0
+        // 3. Either no serial numbers required OR serial numbers count matches quantity
+        const submitBtn = $('#assetOutForm button[type="submit"]');
         
-        // Quantity should match both serial numbers and PO numbers count
-        if (serialsCount > 0 && posCount > 0 && serialsCount === posCount) {
-            $('#qty').val(serialsCount);
+        if (assetSelected && currentQty > 0) {
+            // If serial numbers are available but none selected, still allow submission
+            // The backend can handle asset out without specific serial numbers
+            submitBtn.prop('disabled', false);
+        } else {
+            submitBtn.prop('disabled', true);
         }
+    }
+
+    // Update scan form validation based on serial numbers selection
+    function updateScanFormValidation() {
+        const selectedSerials = $('#scan_serialNumberSelect').val() || [];
+        const currentQty = parseInt($('#scan_out_qty').val()) || 0;
         
         // Enable/disable submit button
-        const submitBtn = $('#assetOutForm button[type="submit"]');
-        if (serialsCount > 0 && posCount > 0 && serialsCount === posCount) {
+        const submitBtn = $('#scan_submitBtn');
+        if (selectedSerials.length > 0 && selectedSerials.length === currentQty) {
             submitBtn.prop('disabled', false);
         } else {
             submitBtn.prop('disabled', true);

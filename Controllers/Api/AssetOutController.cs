@@ -41,15 +41,6 @@ namespace AssetTaking.Controllers.Api
                     });
                 }
 
-                // Validasi jumlah PO items yang dipilih harus sama dengan qty (jika ada PO yang dipilih)
-                if (request.SelectedPos != null && request.SelectedPos.Count > 0 && request.SelectedPos.Count != request.Qty)
-                {
-                    return BadRequest(new { 
-                        Remarks = false, 
-                        Message = $"Jumlah PO items yang dipilih ({request.SelectedPos.Count}) harus sama dengan quantity ({request.Qty})" 
-                    });
-                }
-
                 using var transaction = _context.Database.BeginTransaction();
 
                 var sourceAsset = _context.TblTAssetIns
@@ -59,6 +50,11 @@ namespace AssetTaking.Controllers.Api
                 {
                     return BadRequest(new { Remarks = false, Message = "Asset tidak ditemukan" });
                 }
+
+                // Get PoNumber from the related TblTAsset record
+                var sourceAssetRecord = _context.TblTAssets
+                    .FirstOrDefault(a => a.AssetInId == request.AssetInId);
+                string? poNumber = sourceAssetRecord?.PoNumber;
 
                 if (sourceAsset.Qty < request.Qty)
                 {
@@ -167,6 +163,7 @@ namespace AssetTaking.Controllers.Api
                         Qty = 1, // Each asset is individual
                         Foto = fotoPath,
                         Status = (int)StatusAsset.Out,
+                        PoNumber = poNumber, // Set the PoNumber from source asset
                         DstrctOut = request.DstrctOut,
                         CreatedAt = DateTime.Now,
                         CreatedBy = "system"
@@ -188,36 +185,6 @@ namespace AssetTaking.Controllers.Api
                             serialToTransfer.ModifiedAt = DateTime.Now;
                             serialToTransfer.ModifiedBy = "system";
                         }
-                    }
-
-                    // Transfer the selected PO number to this asset
-                    if (request.SelectedPos != null && i < request.SelectedPos.Count)
-                    {
-                        var poToTransfer = _context.TblRAssetPos
-                            .FirstOrDefault(p => p.Id == request.SelectedPos[i]);
-                        
-                        if (poToTransfer != null)
-                        {
-                            // Update the existing PO record to Out status and link to new asset
-                            poToTransfer.AssetId = asset.AssetId;
-                            poToTransfer.Status = 2; // Asset Out status
-                            poToTransfer.ModifiedAt = DateTime.Now;
-                            poToTransfer.ModifiedBy = "system";
-                        }
-                    }
-                    else if (!string.IsNullOrEmpty(request.PoNumber) && !string.IsNullOrEmpty(request.PoItem))
-                    {
-                        // If no specific PO selected but manual PO provided
-                        var newPoRecord = new TblRAssetPo
-                        {
-                            AssetId = asset.AssetId,
-                            PoNumber = request.PoNumber,
-                            PoItem = request.PoItem,
-                            Status = 2, // Asset Out status
-                            CreatedAt = DateTime.Now,
-                            CreatedBy = "system"
-                        };
-                        _context.TblRAssetPos.Add(newPoRecord);
                     }
                 }
 
@@ -295,6 +262,11 @@ namespace AssetTaking.Controllers.Api
                         message = "Asset In tidak ditemukan untuk asset ini" 
                     });
                 }
+
+                // Get PoNumber from the related TblTAsset record
+                var sourceAssetRecord = _context.TblTAssets
+                    .FirstOrDefault(a => a.AssetInId == sourceAsset.Id);
+                string? poNumber = sourceAssetRecord?.PoNumber;
 
                 if (sourceAsset.Qty < request.Qty)
                 {
@@ -435,6 +407,7 @@ namespace AssetTaking.Controllers.Api
                         Qty = 1, // Each asset is individual
                         Foto = fotoPath,
                         Status = (int)StatusAsset.Out,
+                        PoNumber = poNumber, // Set the PoNumber from source asset
                         DstrctOut = request.DstrctOut,
                         CreatedAt = DateTime.Now,
                         CreatedBy = "Scanner User"
@@ -455,35 +428,6 @@ namespace AssetTaking.Controllers.Api
                             serialToTransfer.Status = 2; // Set status to 2 for Out
                             serialToTransfer.ModifiedAt = DateTime.Now;
                             serialToTransfer.ModifiedBy = "Scanner User";
-                        }
-                    }
-
-                    // Handle PO numbers from QR if provided
-                    if (!string.IsNullOrEmpty(request.PoNumbers))
-                    {
-                        var poNumbers = request.PoNumbers
-                            .Split(',')
-                            .Select(p => p.Trim())
-                            .Where(p => !string.IsNullOrEmpty(p))
-                            .ToList();
-
-                        if (i < poNumbers.Count)
-                        {
-                            // Extract PO Number and PO Item from the format "PONumber-POItem"
-                            var poData = poNumbers[i].Split('-');
-                            var poNumber = poData.Length > 0 ? poData[0] : poNumbers[i];
-                            var poItem = poData.Length > 1 ? poData[1] : "";
-
-                            var newPoRecord = new TblRAssetPo
-                            {
-                                AssetId = asset.AssetId,
-                                PoNumber = poNumber,
-                                PoItem = poItem,
-                                Status = 2, // Asset Out status
-                                CreatedAt = DateTime.Now,
-                                CreatedBy = "Scanner User"
-                            };
-                            _context.TblRAssetPos.Add(newPoRecord);
                         }
                     }
                 }
@@ -671,36 +615,6 @@ namespace AssetTaking.Controllers.Api
             }
         }
 
-        [HttpGet("GetPoNumbers")]
-        public IActionResult GetPoNumbers(int assetId)
-        {
-            try
-            {
-                // Find PO numbers for assets linked to this AssetIn that are available for asset out
-                var poNumbers = (from po in _context.TblRAssetPos
-                               join asset in _context.TblTAssets on po.AssetId equals asset.AssetId
-                               where asset.AssetInId == assetId && 
-                                     asset.Status == (int)StatusAsset.In &&
-                                     po.Status == 1 // Only available POs (status 1 = In)
-                               select new {
-                                   id = po.Id,
-                                   poNumber = po.PoNumber,
-                                   poItem = po.PoItem,
-                                   assetId = po.AssetId,
-                                   display = $"{po.PoNumber} - {po.PoItem}"
-                               })
-                               .OrderBy(p => p.poNumber)
-                               .ThenBy(p => p.poItem)
-                               .ToList();
-
-                return Ok(new { success = true, data = poNumbers });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { success = false, message = ex.Message });
-            }
-        }
-
         // Helper method to generate unique TblTAsset ID
         private int GenerateNextAssetId()
         {
@@ -717,9 +631,6 @@ namespace AssetTaking.Controllers.Api
         public string? State { get; set; }
         public string? DstrctOut { get; set; }
         public List<int>? SelectedSerials { get; set; }
-        public string? PoNumber { get; set; }
-        public string? PoItem { get; set; }
-        public List<int>? SelectedPos { get; set; }
     }
 
     public class AssetOutFromScanRequest
@@ -733,6 +644,5 @@ namespace AssetTaking.Controllers.Api
         public string? State { get; set; }
         public string? DstrctOut { get; set; }
         public string SerialNumbers { get; set; } = string.Empty; // Comma-separated serial numbers from QR
-        public string? PoNumbers { get; set; } // Comma-separated PO numbers from QR
     }
 }

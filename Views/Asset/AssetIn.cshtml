@@ -62,217 +62,285 @@
         <div class="tab-content">
             <!-- Manual Input Tab -->
             <div class="tab-pane fade show active" id="manual-input" role="tabpanel">
-                <form id="assetInForm" enctype="multipart/form-data">
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="namaBarang">Nama Barang</label>
-                                <input type="text" class="form-control" id="namaBarang" name="namaBarang" required>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="nomorAsset">Nomor Asset</label>
-                                <input type="text" class="form-control" id="nomorAsset" name="nomorAsset" required>
-                                <div class="invalid-feedback">
-                                    Nomor Asset sudah terdaftar di database
+                <!-- Step Progress Indicator -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-center">
+                            <div class="d-flex align-items-center">
+                                <div class="step-indicator active" id="step1-indicator">
+                                    <span class="step-number">1</span>
+                                    <span class="step-title">Data Asset</span>
+                                </div>
+                                <div class="step-line"></div>
+                                <div class="step-indicator" id="step2-indicator">
+                                    <span class="step-number">2</span>
+                                    <span class="step-title">Serial & PO Item</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="kategoriBarang">Kategori Barang</label>
-                                <select class="form-control" id="kategoriBarang" name="kategoriBarang" required>
-                                    <option value="">Pilih Kategori...</option>
-                                    <option value="SPAREPART">Spare Part</option>
-                                    <option value="RnD">RnD Assets</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="kodeBarang">Kode Barang</label>
-                                <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" required readonly disabled>
-                                <div class="form-check mt-2">
-                                    <input class="form-check-input" type="checkbox" id="manualKodeBarang" name="manualKodeBarang">
-                                    <label class="form-check-label" for="manualKodeBarang">
-                                        <small>Input manual kode barang</small>
-                                    </label>
-                                </div>
-                                <div class="form-text text-muted" id="kodeBarangInfo">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    Kode barang akan otomatis diisi berdasarkan kategori yang dipilih
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="qty">Quantity</label>
-                                <input type="number" class="form-control" id="qty" name="qty" min="1" required>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label">Serial Numbers</label>
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" id="manualSerial" name="manualSerial">
-                                    <label class="form-check-label" for="manualSerial">
-                                        <small>Input manual serial number</small>
-                                    </label>
-                                </div>
-                                <div id="autoSerialInfo" class="form-control bg-light" style="min-height: 38px; display: flex; align-items: center;">
-                                    <i class="fa fa-cog me-2 text-muted"></i>
-                                    <span class="text-muted">Akan dibuat otomatis berdasarkan kategori dan quantity</span>
-                                </div>
-                                <div id="manualSerialInput" style="display: none;">
-                                    <input type="text" class="form-control" id="serialNumbers" name="serialNumbers" placeholder="Masukkan serial number, pisahkan dengan koma jika ada multiple">
-                                </div>
-                                <div class="form-text text-muted">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    <span id="serialHelpText">Serial numbers akan dibuat otomatis (contoh: RND12391) berdasarkan kategori yang dipilih</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="poNumber">PO Number</label>
-                                <input type="text" class="form-control" id="poNumber" name="poNumber" placeholder="Contoh: PO-2024-001">
-                                <div class="form-text text-muted">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    Nomor Purchase Order dari pembelian asset
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="poItem">PO Item</label>
-                                <input type="text" class="form-control" id="poItem" name="poItem" placeholder="Contoh: 001, 002">
-                                <div class="form-text text-muted">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    Nomor item dalam PO (opsional)
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="state">State/Kondisi</label>
-                                <select class="form-control" id="state" name="state">
-                                    <option value="">Pilih State...</option>
-                                    <!-- Options akan diload dari API -->
-                                </select>
-                                <div class="form-text text-muted">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    Kondisi/status asset saat ini
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="dstrctIn">District In</label>
-                                <select class="form-control" id="dstrctIn" name="dstrctIn">
-                                    <option value="">Pilih District...</option>
-                                    <!-- Options akan diload dari API -->
-                                </select>
-                                <div class="form-text text-muted">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    Lokasi district asset masuk
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-lg-6">
-                            <div class="mb-4">
-                                <label class="form-label" for="fotoFile">Foto Asset</label>
-                                <input type="file" class="form-control" id="fotoFile" name="fotoFile" accept="image/*">
-                                <div class="form-text text-muted">
-                                    <i class="fa fa-info-circle me-1"></i>
-                                    Format yang didukung: JPG, JPEG, PNG, GIF (Max: 5MB)
-                                </div>
-                                <div id="imagePreview" class="mt-2" style="display:none;">
-                                    <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-lg-6">
-                            <!-- Empty column for layout balance -->
-                        </div>
-                    </div>
+                </div>
 
-                    <div class="mb-4">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="fa fa-save"></i> Submit Asset In
-                        </button>
-                        <button type="reset" class="btn btn-secondary">
-                            <i class="fa fa-refresh"></i> Reset
-                        </button>
-                    </div>
-                </form>
+                <!-- Step 1: Asset Data Form -->
+                <div id="step1-content" class="step-content active">
+                    <form id="assetDataForm">
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="namaBarang">Nama Barang</label>
+                                    <input type="text" class="form-control" id="namaBarang" name="namaBarang" required>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="nomorAsset">Nomor Asset</label>
+                                    <input type="text" class="form-control" id="nomorAsset" name="nomorAsset" required>
+                                    <div class="invalid-feedback">
+                                        Nomor Asset sudah terdaftar di database
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="kategoriBarang">Kategori Barang</label>
+                                    <select class="form-control" id="kategoriBarang" name="kategoriBarang" required>
+                                        <option value="">Pilih Kategori...</option>
+                                        <option value="SPAREPART">Spare Part</option>
+                                        <option value="RnD">RnD Assets</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="kodeBarang">Kode Barang</label>
+                                    <input type="text" class="form-control" id="kodeBarang" name="kodeBarang" required readonly disabled>
+                                    <div class="form-check mt-2">
+                                        <input class="form-check-input" type="checkbox" id="manualKodeBarang" name="manualKodeBarang">
+                                        <label class="form-check-label" for="manualKodeBarang">
+                                            <small>Input manual kode barang</small>
+                                        </label>
+                                    </div>
+                                    <div class="form-text text-muted" id="kodeBarangInfo">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        Kode barang akan otomatis diisi berdasarkan kategori yang dipilih
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="qty">Quantity</label>
+                                    <input type="number" class="form-control" id="qty" name="qty" min="1" required>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="poNumber">PO Number (Opsional)</label>
+                                    <input type="text" class="form-control" id="poNumber" name="poNumber" placeholder="Contoh: PO-2024-001">
+                                    <div class="form-text text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        Nomor Purchase Order umum (akan didetailkan di langkah selanjutnya)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="state">State/Kondisi</label>
+                                    <select class="form-control" id="state" name="state">
+                                        <option value="">Pilih State...</option>
+                                        <!-- Options akan diload dari API -->
+                                    </select>
+                                    <div class="form-text text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        Kondisi/status asset saat ini
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="dstrctIn">District In</label>
+                                    <select class="form-control" id="dstrctIn" name="dstrctIn">
+                                        <option value="">Pilih District...</option>
+                                        <!-- Options akan diload dari API -->
+                                    </select>
+                                    <div class="form-text text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        Lokasi district asset masuk
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="mb-4">
+                                    <label class="form-label" for="fotoFile">Foto Asset</label>
+                                    <input type="file" class="form-control" id="fotoFile" name="fotoFile" accept="image/*">
+                                    <div class="form-text text-muted">
+                                        <i class="fa fa-info-circle me-1"></i>
+                                        Format yang didukung: JPG, JPEG, PNG, GIF (Max: 5MB)
+                                    </div>
+                                    <div id="imagePreview" class="mt-2" style="display:none;">
+                                        <img id="previewImg" src="" alt="Preview" style="max-width: 200px; max-height: 200px; border: 1px solid #ddd; border-radius: 4px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <button type="button" class="btn btn-primary" id="nextToStep2">
+                                <i class="fa fa-arrow-right"></i> Lanjut ke Serial Numbers & PO Items
+                            </button>
+                            <button type="reset" class="btn btn-secondary">
+                                <i class="fa fa-refresh"></i> Reset
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Step 2: Serial Numbers & PO Items Mapping -->
+                <div id="step2-content" class="step-content" style="display: none;">
+                    <form id="serialPoForm">
+                        <!-- Asset Data Summary -->
+                        <div class="card mb-4">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fa fa-info-circle me-1"></i> Ringkasan Data Asset
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <strong>Nama Barang:</strong><br>
+                                        <span id="summary-namaBarang">-</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Nomor Asset:</strong><br>
+                                        <span id="summary-nomorAsset">-</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Kategori:</strong><br>
+                                        <span id="summary-kategoriBarang">-</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <strong>Quantity:</strong><br>
+                                        <span id="summary-qty">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Serial Numbers & PO Items Mapping -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="card-title mb-0">
+                                    <i class="fa fa-list me-1"></i> Mapping Serial Numbers & PO Items
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="alert alert-info">
+                                    <i class="fa fa-info-circle me-1"></i>
+                                    <strong>Petunjuk:</strong> Serial numbers telah dibuat otomatis berdasarkan kategori dan quantity. 
+                                    Silakan isi PO Item untuk setiap serial number jika diperlukan.
+                                </div>
+                                
+                                <div id="serialPoMapping">
+                                    <!-- This will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <button type="button" class="btn btn-secondary" id="backToStep1">
+                                <i class="fa fa-arrow-left"></i> Kembali ke Data Asset
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="submitAssetIn">
+                                <i class="fa fa-save"></i> Submit Asset In
+                            </button>
+                        </div>
+                    </form>
+                </div>
             </div>
 
             <!-- Scan QR/Barcode Tab -->
             <div class="tab-pane fade" id="scan-input" role="tabpanel">
-                <div class="row">
-                    <!-- Scanner Section -->
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fa fa-camera me-1"></i> Scanner
-                                </h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="qr-scanner-section">
-                                    <div id="qr-reader" style="width: 100%; max-width: 400px; margin: 0 auto; display: none;"></div>
-                                    
-                                    <!-- Scanner Controls -->
-                                    <div class="text-center">
-                                        <div id="scanner-status" class="mb-3">
-                                            <i class="fa fa-qrcode fa-3x text-muted mb-2 d-block"></i>
-                                            <h6 class="text-muted">Klik tombol di bawah untuk memulai scan</h6>
-                                        </div>
-                                        
-                                        <button type="button" class="btn btn-success me-2" id="startScanBtn">
-                                            <i class="fa fa-camera me-1"></i> Mulai Scan
-                                        </button>
-                                        <button type="button" class="btn btn-danger" id="stopScanBtn" style="display:none;">
-                                            <i class="fa fa-stop me-1"></i> Stop
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- Scan Result Alert -->
-                                    <div id="scan-result" class="alert alert-success mt-3" style="display:none;">
-                                        <i class="fa fa-check-circle me-1"></i>
-                                        <strong>Scan berhasil!</strong> Data telah diisi otomatis.
-                                    </div>
+                <!-- Step Progress Indicator for Scan -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-center">
+                            <div class="d-flex align-items-center">
+                                <div class="step-indicator active" id="scan-step1-indicator">
+                                    <span class="step-number">1</span>
+                                    <span class="step-title">Scan & Data Asset</span>
+                                </div>
+                                <div class="step-line"></div>
+                                <div class="step-indicator" id="scan-step2-indicator">
+                                    <span class="step-number">2</span>
+                                    <span class="step-title">Serial & PO Item</span>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Scanned Data Form -->
-                    <div class="col-lg-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5 class="card-title mb-0">
-                                    <i class="fa fa-edit me-1"></i> Data Asset
-                                </h5>
+                <!-- Scan Step 1: Scanner & Asset Data -->
+                <div id="scan-step1-content" class="step-content active">
+                    <div class="row">
+                        <!-- Scanner Section -->
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fa fa-camera me-1"></i> Scanner
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="qr-scanner-section">
+                                        <div id="qr-reader" style="width: 100%; max-width: 400px; margin: 0 auto; display: none;"></div>
+                                        
+                                        <!-- Scanner Controls -->
+                                        <div class="text-center">
+                                            <div id="scanner-status" class="mb-3">
+                                                <i class="fa fa-qrcode fa-3x text-muted mb-2 d-block"></i>
+                                                <h6 class="text-muted">Klik tombol di bawah untuk memulai scan</h6>
+                                            </div>
+                                            
+                                            <button type="button" class="btn btn-success me-2" id="startScanBtn">
+                                                <i class="fa fa-camera me-1"></i> Mulai Scan
+                                            </button>
+                                            <button type="button" class="btn btn-danger" id="stopScanBtn" style="display:none;">
+                                                <i class="fa fa-stop me-1"></i> Stop
+                                            </button>
+                                        </div>
+                                        
+                                        <!-- Scan Result Alert -->
+                                        <div id="scan-result" class="alert alert-success mt-3" style="display:none;">
+                                            <i class="fa fa-check-circle me-1"></i>
+                                            <strong>Scan berhasil!</strong> Data telah diisi otomatis.
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+                        </div>
+
+                        <!-- Scanned Data Form -->
+                        <div class="col-lg-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fa fa-edit me-1"></i> Data Asset
+                                    </h5>
+                                </div>
                             <div class="card-body">
-                                <form id="scannedAssetForm" enctype="multipart/form-data">
+                                <form id="scanAssetDataForm">
                                     <div class="mb-3">
                                         <label class="form-label" for="scan_nomorAsset">Nomor Asset</label>
                                         <input type="text" class="form-control" id="scan_nomorAsset" name="nomorAsset" readonly>
@@ -298,32 +366,12 @@
                                         <input type="number" class="form-control" id="scan_qty" name="qty" min="1" required>
                                     </div>
                                     <div class="mb-3">
-                                        <label class="form-label">Serial Numbers</label>
-                                        <div class="form-check mb-2">
-                                            <input class="form-check-input" type="checkbox" id="scan_manualSerial" name="manualSerial">
-                                            <label class="form-check-label" for="scan_manualSerial">
-                                                <small>Input manual serial number</small>
-                                            </label>
-                                        </div>
-                                        <div id="scan_autoSerialInfo" class="form-control bg-light" style="min-height: 38px; display: flex; align-items: center;">
-                                            <i class="fa fa-cog me-2 text-muted"></i>
-                                            <span class="text-muted">Akan dibuat otomatis berdasarkan kategori dan quantity</span>
-                                        </div>
-                                        <div id="scan_manualSerialInput" style="display: none;">
-                                            <input type="text" class="form-control" id="scan_serialNumbers" name="serialNumbers" placeholder="Masukkan serial number, pisahkan dengan koma jika ada multiple">
-                                        </div>
+                                        <label class="form-label" for="scan_poNumber">PO Number (Opsional)</label>
+                                        <input type="text" class="form-control" id="scan_poNumber" name="poNumber" placeholder="Contoh: PO-2024-001">
                                         <div class="form-text text-muted">
                                             <i class="fa fa-info-circle me-1"></i>
-                                            <span id="scan_serialHelpText">Serial numbers akan dibuat otomatis (contoh: RND12391) berdasarkan kategori yang dipilih</span>
+                                            Nomor Purchase Order umum (akan didetailkan di langkah selanjutnya)
                                         </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label" for="scan_poNumber">PO Number</label>
-                                        <input type="text" class="form-control" id="scan_poNumber" name="poNumber">
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label" for="scan_poItem">PO Item</label>
-                                        <input type="text" class="form-control" id="scan_poItem" name="poItem">
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label" for="scan_state">State/Kondisi</label>
@@ -352,13 +400,9 @@
                                     </div>
                                     
                                     <div class="d-grid gap-2">
-                                        <button type="submit" class="btn btn-primary" disabled id="submitScannedBtn">
-                                            <i class="fa fa-save me-1"></i> Submit Asset In
+                                        <button type="button" class="btn btn-primary" disabled id="scanNextToStep2">
+                                            <i class="fa fa-arrow-right me-1"></i> Lanjut ke Serial Numbers & PO Items
                                         </button>
-                                        <div id="validationStatus" class="alert alert-warning mt-2" style="display:none;">
-                                            <i class="fa fa-exclamation-triangle me-1"></i>
-                                            <span id="validationMessage">Data sedang divalidasi...</span>
-                                        </div>
                                         <button type="button" class="btn btn-secondary" id="resetScanBtn">
                                             <i class="fa fa-refresh me-1"></i> Reset & Scan Lagi
                                         </button>
@@ -370,6 +414,41 @@
                                     <i class="fa fa-qrcode fa-3x text-muted mb-3"></i>
                                     <h6 class="text-muted">Silakan scan QR Code atau Barcode</h6>
                                     <p class="text-muted small">Pastikan kode dalam posisi yang jelas dan terang</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 2: Serial Number & PO Item Mapping -->
+                        <div id="scan-step-2" class="step-content" style="display: none;">
+                            <div class="card border-0">
+                                <div class="card-header">
+                                    <h6 class="mb-0">
+                                        <i class="fa fa-list-alt me-2"></i>
+                                        Mapping Serial Numbers ke PO Items
+                                    </h6>
+                                    <small class="text-muted">Hubungkan setiap serial number dengan PO item yang sesuai</small>
+                                </div>
+                                <div class="card-body">
+                                    <div class="mb-3">
+                                        <div class="alert alert-info">
+                                            <i class="fa fa-info-circle me-1"></i>
+                                            <strong>Serial Numbers akan dibuat otomatis</strong> berdasarkan kategori dan quantity yang dipilih.
+                                            Jika tidak ada PO Item, biarkan field kosong.
+                                        </div>
+                                    </div>
+                                    
+                                    <div id="scan-serialPoMapping" class="mb-3">
+                                        <!-- Serial number to PO item mapping akan diload di sini -->
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                                        <button type="button" class="btn btn-outline-secondary" id="scanBackToStep1">
+                                            <i class="fa fa-arrow-left me-1"></i> Kembali
+                                        </button>
+                                        <button type="button" class="btn btn-primary" id="submitScanAssetIn">
+                                            <i class="fa fa-save me-1"></i> Submit Asset In
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -476,6 +555,105 @@
 </div>
 
 @section Scripts {
+    <style>
+        /* Step Progress Indicator Styles */
+        .step-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0 20px;
+            position: relative;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #6c757d;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .step-indicator.active .step-number {
+            background-color: #007bff;
+        }
+
+        .step-indicator.completed .step-number {
+            background-color: #28a745;
+        }
+
+        .step-title {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #6c757d;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .step-indicator.active .step-title {
+            color: #007bff;
+        }
+
+        .step-indicator.completed .step-title {
+            color: #28a745;
+        }
+
+        .step-line {
+            width: 100px;
+            height: 2px;
+            background-color: #e9ecef;
+            margin: 0 10px;
+            margin-top: -22px;
+            z-index: -1;
+        }
+
+        .step-content {
+            min-height: 400px;
+        }
+
+        .step-content.active {
+            display: block !important;
+        }
+
+        /* Serial PO Mapping Styles */
+        .serial-po-item {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            background-color: #f8f9fa;
+        }
+
+        .serial-number-display {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #495057;
+            background-color: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        @@media (max-width: 576px) {
+            .step-indicator {
+                padding: 0 10px;
+            }
+            
+            .step-line {
+                width: 50px;
+            }
+            
+            .step-title {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+    
     <script src="~/js/AssetIn.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <!-- QR/Barcode Scanner Library -->

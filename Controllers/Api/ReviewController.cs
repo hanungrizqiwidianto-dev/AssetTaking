@@ -91,6 +91,11 @@ namespace AssetTaking.Controllers.Api
                         a.Foto,
                         a.Status,
                         StatusText = a.Status == 1 ? "Asset In" : a.Status == 2 ? "Asset Out" : "Unknown",
+                        a.DstrctIn,
+                        a.DstrctOut,
+                        a.PoNumber,
+                        // Dynamic district based on status
+                        District = a.Status == 1 ? a.DstrctIn : a.Status == 2 ? a.DstrctOut : null,
                         a.CreatedAt,
                         a.CreatedBy,
                         a.ModifiedAt,
@@ -108,6 +113,88 @@ namespace AssetTaking.Controllers.Api
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error retrieving asset details", error = ex.Message });
+            }
+        }
+
+        [HttpGet("GetAssetOverview")]
+        public IActionResult GetAssetOverview([FromQuery] string kodeBarang, [FromQuery] string nomorAsset)
+        {
+            try
+            {
+                // Get overview data
+                var assetGroup = _context.TblTAssets
+                    .Where(a => a.KodeBarang == kodeBarang && a.NomorAsset == nomorAsset)
+                    .GroupBy(a => new { a.KodeBarang, a.NomorAsset })
+                    .Select(g => new
+                    {
+                        kodeBarang = g.Key.KodeBarang,
+                        nomorAsset = g.Key.NomorAsset,
+                        namaBarang = g.First().NamaBarang,
+                        kategori = g.First().KategoriBarang,
+                        // Calculate current quantity: Asset In - Asset Out
+                        totalQuantity = Math.Max(0, 
+                            g.Where(x => x.Status == 1).Sum(x => x.Qty ?? 0) - 
+                            g.Where(x => x.Status == 2).Sum(x => x.Qty ?? 0)
+                        ),
+                        // Get PO Number from any record
+                        poNumber = g.First().PoNumber,
+                        // Calculate district based on latest status
+                        district = g.OrderByDescending(x => x.CreatedAt).First().Status == 1 
+                                   ? g.OrderByDescending(x => x.CreatedAt).First().DstrctIn 
+                                   : g.OrderByDescending(x => x.CreatedAt).First().DstrctOut,
+                        createdAt = g.Min(x => x.CreatedAt),
+                        updatedAt = g.Max(x => x.ModifiedAt ?? x.CreatedAt)
+                    })
+                    .FirstOrDefault();
+
+                if (assetGroup == null)
+                {
+                    return NotFound(new { success = false, message = "Asset not found" });
+                }
+
+                // Get detailed assets list
+                var assetDetails = _context.TblTAssets
+                    .Where(a => a.KodeBarang == kodeBarang && a.NomorAsset == nomorAsset)
+                    .Select(a => new
+                    {
+                        id = a.Id,
+                        namaBarang = a.NamaBarang,
+                        tanggalMasuk = a.TanggalMasuk,
+                        nomorAsset = a.NomorAsset,
+                        kodeBarang = a.KodeBarang,
+                        kategori = a.KategoriBarang,
+                        qty = a.Qty,
+                        foto = a.Foto,
+                        status = a.Status,
+                        statusAsset = a.Status == 1 ? "Asset In" : a.Status == 2 ? "Asset Out" : "Unknown",
+                        dstrctIn = a.DstrctIn,
+                        dstrctOut = a.DstrctOut,
+                        poNumber = a.PoNumber,
+                        // Dynamic district based on status
+                        district = a.Status == 1 ? a.DstrctIn : a.Status == 2 ? a.DstrctOut : null,
+                        createdAt = a.CreatedAt,
+                        createdBy = a.CreatedBy,
+                        modifiedAt = a.ModifiedAt,
+                        modifiedBy = a.ModifiedBy
+                    })
+                    .OrderBy(a => a.id)
+                    .ToList();
+
+                var result = new { 
+                    success = true, 
+                    data = new {
+                        overview = assetGroup,
+                        assets = assetDetails
+                    }
+                };
+
+                Console.WriteLine($"Returning {assetDetails.Count} assets for {kodeBarang}/{nomorAsset}");
+                
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Error retrieving asset overview", error = ex.Message });
             }
         }
 
@@ -130,6 +217,11 @@ namespace AssetTaking.Controllers.Api
                         a.Foto,
                         a.Status,
                         StatusText = a.Status == 1 ? "Asset In" : a.Status == 2 ? "Asset Out" : "Unknown",
+                        a.DstrctIn,
+                        a.DstrctOut,
+                        a.PoNumber,
+                        // Dynamic district based on status
+                        District = a.Status == 1 ? a.DstrctIn : a.Status == 2 ? a.DstrctOut : null,
                         a.CreatedAt,
                         a.CreatedBy,
                         a.ModifiedAt,
@@ -765,6 +857,591 @@ namespace AssetTaking.Controllers.Api
                 return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
             }
         }
+
+        // ===== SERIAL NUMBER CRUD ENDPOINTS =====
+
+        [HttpPut("UpdateSerial/{serialId}")]
+        public async Task<IActionResult> UpdateSerial(int serialId, [FromBody] UpdateSerialRequest request)
+        {
+            try
+            {
+                var serial = await _context.TblRAssetSerials.FirstOrDefaultAsync(s => s.SerialId == serialId);
+                if (serial == null)
+                {
+                    return NotFound(new { success = false, message = "Serial number tidak ditemukan" });
+                }
+
+                // Update serial data
+                serial.SerialNumber = request.SerialNumber;
+                serial.State = request.StateId;
+                serial.Notes = request.Notes;
+                serial.ModifiedAt = DateTime.Now;
+                serial.ModifiedBy = "system";
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Serial number berhasil diupdate" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
+
+        [HttpDelete("DeleteSerial/{serialId}")]
+        public async Task<IActionResult> DeleteSerial(int serialId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var serial = await _context.TblRAssetSerials.FirstOrDefaultAsync(s => s.SerialId == serialId);
+                if (serial == null)
+                {
+                    return NotFound(new { success = false, message = "Serial number tidak ditemukan" });
+                }
+
+                // Find associated asset to update quantity
+                var asset = await _context.TblTAssets.FirstOrDefaultAsync(a => a.AssetId == serial.AssetId);
+                if (asset != null)
+                {
+                    // Decrease asset quantity by 1
+                    asset.Qty = Math.Max(0, (asset.Qty ?? 1) - 1);
+                    asset.ModifiedAt = DateTime.Now;
+                    asset.ModifiedBy = "system";
+
+                    // Also update TblTAssetIn if it's an asset in
+                    if (asset.Status == (int)StatusAsset.In)
+                    {
+                        var assetIn = await _context.TblTAssetIns
+                            .FirstOrDefaultAsync(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
+                        if (assetIn != null)
+                        {
+                            assetIn.Qty = Math.Max(0, (assetIn.Qty ?? 1) - 1);
+                            assetIn.ModifiedAt = DateTime.Now;
+                            assetIn.ModifiedBy = "system";
+                        }
+                    }
+                }
+
+                // Delete serial
+                _context.TblRAssetSerials.Remove(serial);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { success = true, message = "Serial number berhasil dihapus dan quantity diupdate" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
+
+        [HttpPost("AddSerial")]
+        public async Task<IActionResult> AddSerial([FromBody] AddSerialRequest request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Find the asset to get AssetId
+                var asset = await _context.TblTAssets.FirstOrDefaultAsync(a => a.Id == request.AssetId);
+                if (asset == null)
+                {
+                    return NotFound(new { success = false, message = "Asset tidak ditemukan" });
+                }
+
+                // Check if serial number already exists
+                var existingSerial = await _context.TblRAssetSerials
+                    .FirstOrDefaultAsync(s => s.SerialNumber == request.SerialNumber);
+                if (existingSerial != null)
+                {
+                    return BadRequest(new { success = false, message = "Serial number sudah ada" });
+                }
+
+                // Generate new SerialId
+                var maxSerialId = await _context.TblRAssetSerials.MaxAsync(s => (int?)s.SerialId) ?? 0;
+
+                // Add new serial
+                var newSerial = new TblRAssetSerial
+                {
+                    SerialId = maxSerialId + 1,
+                    AssetId = asset.AssetId,
+                    SerialNumber = request.SerialNumber,
+                    State = request.StateId,
+                    Notes = request.Notes,
+                    Status = 1, // Active
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "system"
+                };
+
+                _context.TblRAssetSerials.Add(newSerial);
+
+                // Increase asset quantity by 1
+                asset.Qty = (asset.Qty ?? 0) + 1;
+                asset.ModifiedAt = DateTime.Now;
+                asset.ModifiedBy = "system";
+
+                // Also update TblTAssetIn if it's an asset in
+                if (asset.Status == (int)StatusAsset.In)
+                {
+                    var assetIn = await _context.TblTAssetIns
+                        .FirstOrDefaultAsync(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
+                    if (assetIn != null)
+                    {
+                        assetIn.Qty = (assetIn.Qty ?? 0) + 1;
+                        assetIn.ModifiedAt = DateTime.Now;
+                        assetIn.ModifiedBy = "system";
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { success = true, message = "Serial number berhasil ditambahkan dan quantity diupdate" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
+
+        // ===== PO NUMBER CRUD ENDPOINTS =====
+
+        [HttpPut("UpdatePo/{poId}")]
+        public async Task<IActionResult> UpdatePo(int poId, [FromBody] UpdatePoRequest request)
+        {
+            try
+            {
+                var po = await _context.TblRAssetPos.FirstOrDefaultAsync(p => p.Id == poId);
+                if (po == null)
+                {
+                    return NotFound(new { success = false, message = "PO number tidak ditemukan" });
+                }
+
+                // Update PO data
+                po.PoNumber = request.PoNumber;
+                po.PoItem = request.PoItem;
+                po.ModifiedAt = DateTime.Now;
+                po.ModifiedBy = "system";
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "PO number berhasil diupdate" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
+
+        [HttpDelete("DeletePo/{poId}")]
+        public async Task<IActionResult> DeletePo(int poId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var po = await _context.TblRAssetPos.FirstOrDefaultAsync(p => p.Id == poId);
+                if (po == null)
+                {
+                    return NotFound(new { success = false, message = "PO number tidak ditemukan" });
+                }
+
+                // Find associated asset to update quantity
+                var asset = await _context.TblTAssets.FirstOrDefaultAsync(a => a.AssetId == po.AssetId);
+                if (asset != null)
+                {
+                    // Decrease asset quantity by 1
+                    asset.Qty = Math.Max(0, (asset.Qty ?? 1) - 1);
+                    asset.ModifiedAt = DateTime.Now;
+                    asset.ModifiedBy = "system";
+
+                    // Also update TblTAssetIn if it's an asset in
+                    if (asset.Status == (int)StatusAsset.In)
+                    {
+                        var assetIn = await _context.TblTAssetIns
+                            .FirstOrDefaultAsync(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
+                        if (assetIn != null)
+                        {
+                            assetIn.Qty = Math.Max(0, (assetIn.Qty ?? 1) - 1);
+                            assetIn.ModifiedAt = DateTime.Now;
+                            assetIn.ModifiedBy = "system";
+                        }
+                    }
+                }
+
+                // Delete PO
+                _context.TblRAssetPos.Remove(po);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { success = true, message = "PO number berhasil dihapus dan quantity diupdate" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
+
+        [HttpPost("AddPo")]
+        public async Task<IActionResult> AddPo([FromBody] AddPoRequest request)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // Find the asset to get AssetId
+                var asset = await _context.TblTAssets.FirstOrDefaultAsync(a => a.Id == request.AssetId);
+                if (asset == null)
+                {
+                    return NotFound(new { success = false, message = "Asset tidak ditemukan" });
+                }
+
+                // Add new PO
+                var newPo = new TblRAssetPo
+                {
+                    AssetId = asset.AssetId,
+                    PoNumber = request.PoNumber,
+                    PoItem = request.PoItem,
+                    CreatedAt = DateTime.Now,
+                    CreatedBy = "system"
+                };
+
+                _context.TblRAssetPos.Add(newPo);
+
+                // Increase asset quantity by 1
+                asset.Qty = (asset.Qty ?? 0) + 1;
+                asset.ModifiedAt = DateTime.Now;
+                asset.ModifiedBy = "system";
+
+                // Also update TblTAssetIn if it's an asset in
+                if (asset.Status == (int)StatusAsset.In)
+                {
+                    var assetIn = await _context.TblTAssetIns
+                        .FirstOrDefaultAsync(ai => ai.NomorAsset == asset.NomorAsset && ai.KodeBarang == asset.KodeBarang);
+                    if (assetIn != null)
+                    {
+                        assetIn.Qty = (assetIn.Qty ?? 0) + 1;
+                        assetIn.ModifiedAt = DateTime.Now;
+                        assetIn.ModifiedBy = "system";
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return Ok(new { success = true, message = "PO number berhasil ditambahkan dan quantity diupdate" });
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return StatusCode(500, new { success = false, message = "Terjadi kesalahan: " + ex.Message });
+            }
+        }
+
+        [HttpGet("GetAssetSerialNumbers")]
+        public IActionResult GetAssetSerialNumbers(string kodeBarang, string nomorAsset)
+        {
+            try
+            {
+                var serials = _context.TblRAssetSerials
+                    .Include(s => s.Asset)
+                    .Where(s => s.Asset.KodeBarang == kodeBarang && s.Asset.NomorAsset == nomorAsset)
+                    .OrderBy(s => s.SerialNumber)
+                    .Select(s => new
+                    {
+                        Id = s.SerialId,
+                        SerialNumber = s.SerialNumber
+                    })
+                    .ToList();
+
+                return Ok(new { Success = true, Data = serials });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Success = false, Message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpGet("GetPODetails")]
+        public IActionResult GetPODetails(string poNumber)
+        {
+            try
+            {
+                var poDetails = _context.TblRAssetPos
+                    .Where(p => p.PoNumber == poNumber)
+                    .Select(p => new
+                    {
+                        PoNumber = p.PoNumber,
+                        PoItem = p.PoItem
+                    })
+                    .FirstOrDefault();
+
+                if (poDetails == null)
+                {
+                    return NotFound(new { Success = false, Message = "PO not found" });
+                }
+
+                return Ok(new { Success = true, Data = poDetails });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Success = false, Message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpGet("GetAssetSerialNumbersPaginated")]
+        public IActionResult GetAssetSerialNumbersPaginated(
+            string kodeBarang, 
+            string nomorAsset, 
+            int page = 1, 
+            int pageSize = 10, 
+            string search = "")
+        {
+            try
+            {
+                // Debug logging
+                Console.WriteLine($"GetAssetSerialNumbersPaginated called with: kodeBarang={kodeBarang}, nomorAsset={nomorAsset}");
+                
+                // First, try to find the asset and get its AssetId
+                var asset = _context.TblTAssets
+                    .Where(a => a.KodeBarang == kodeBarang && a.NomorAsset == nomorAsset)
+                    .FirstOrDefault();
+                
+                if (asset == null)
+                {
+                    Console.WriteLine($"No asset found with kodeBarang={kodeBarang}, nomorAsset={nomorAsset}");
+                    return Ok(new { Success = true, Data = new { Items = new List<object>(), TotalItems = 0, TotalPages = 0, CurrentPage = page, PageSize = pageSize } });
+                }
+                
+                Console.WriteLine($"Found asset with AssetId={asset.AssetId}");
+                
+                // Now query serials using AssetId
+                var query = _context.TblRAssetSerials
+                    .Where(s => s.AssetId == asset.AssetId);
+
+                // Debug: Log the SQL query and count
+                var totalBeforeFilter = query.Count();
+                Console.WriteLine($"Total serials found for AssetId {asset.AssetId}: {totalBeforeFilter}");
+
+                // Apply search filter
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(s => 
+                        s.SerialNumber.Contains(search) || 
+                        (s.Notes != null && s.Notes.Contains(search)));
+                }
+
+                var totalItems = query.Count();
+                var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+                var serials = query
+                    .OrderBy(s => s.SerialNumber)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(s => new
+                    {
+                        Id = s.SerialId,
+                        SerialNumber = s.SerialNumber,
+                        Description = s.Notes ?? "",
+                        Status = s.Status == 1 ? "Active" : "Inactive",
+                        CreatedAt = s.CreatedAt,
+                        AssetId = s.AssetId
+                    })
+                    .ToList();
+
+                Console.WriteLine($"Returning {serials.Count} serials out of {totalItems} total");
+
+                var result = new
+                {
+                    Items = serials,
+                    TotalItems = totalItems,
+                    TotalPages = totalPages,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
+
+                return Ok(new { Success = true, Data = result });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetAssetSerialNumbersPaginated: {ex.Message}");
+                return BadRequest(new { Success = false, Message = $"Error: {ex.Message}" });
+            }
+        }
+
+        [HttpGet("GetPODetailsPaginated")]
+        public IActionResult GetPODetailsPaginated(
+            string poNumber = "", 
+            string kodeBarang = "", 
+            string nomorAsset = "", 
+            int page = 1, 
+            int pageSize = 10, 
+            string search = "")
+        {
+            try
+            {
+                // Debug logging
+                Console.WriteLine($"GetPODetailsPaginated called with: poNumber={poNumber}, kodeBarang={kodeBarang}, nomorAsset={nomorAsset}");
+                
+                var query = _context.TblRAssetPos.AsQueryable();
+
+                // If we have asset details, find by AssetId
+                if (!string.IsNullOrEmpty(kodeBarang) && !string.IsNullOrEmpty(nomorAsset))
+                {
+                    var asset = _context.TblTAssets
+                        .Where(a => a.KodeBarang == kodeBarang && a.NomorAsset == nomorAsset)
+                        .FirstOrDefault();
+                    
+                    if (asset != null)
+                    {
+                        Console.WriteLine($"Found asset with AssetId={asset.AssetId}");
+                        query = query.Where(p => p.AssetId == asset.AssetId);
+                    }
+                    else
+                    {
+                        Console.WriteLine($"No asset found with kodeBarang={kodeBarang}, nomorAsset={nomorAsset}");
+                        return Ok(new { Success = true, Data = new { Items = new List<object>(), TotalItems = 0, TotalPages = 0, CurrentPage = page, PageSize = pageSize } });
+                    }
+                }
+                // Filter by PO Number if provided
+                else if (!string.IsNullOrEmpty(poNumber))
+                {
+                    query = query.Where(p => p.PoNumber == poNumber);
+                }
+
+                // Debug: Log the SQL query and count
+                var totalBeforeFilter = query.Count();
+                Console.WriteLine($"Total PO details found: {totalBeforeFilter}");
+
+                // Apply search filter
+                if (!string.IsNullOrEmpty(search))
+                {
+                    query = query.Where(p => 
+                        (p.PoNumber != null && p.PoNumber.Contains(search)) || 
+                        (p.PoItem != null && p.PoItem.Contains(search)));
+                }
+
+                var totalItems = query.Count();
+                var totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+                var poDetails = query
+                    .OrderBy(p => p.PoNumber)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(p => new
+                    {
+                        Id = p.Id,
+                        PoNumber = p.PoNumber,
+                        PoItem = p.PoItem ?? "",
+                        Vendor = "", // Field not available in current model
+                        PoDate = p.CreatedAt,
+                        AssetId = p.AssetId
+                    })
+                    .ToList();
+
+                Console.WriteLine($"Returning {poDetails.Count} PO details out of {totalItems} total");
+
+                var result = new
+                {
+                    Items = poDetails,
+                    TotalItems = totalItems,
+                    TotalPages = totalPages,
+                    CurrentPage = page,
+                    PageSize = pageSize
+                };
+
+                return Ok(new { Success = true, Data = result });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in GetPODetailsPaginated: {ex.Message}");
+                return BadRequest(new { Success = false, Message = $"Error: {ex.Message}" });
+            }
+        }
+        
+        [HttpGet("DebugAssetData")]
+        public IActionResult DebugAssetData(string kodeBarang, string nomorAsset)
+        {
+            try
+            {
+                // Get asset information
+                var assets = _context.TblTAssets
+                    .Where(a => a.KodeBarang == kodeBarang && a.NomorAsset == nomorAsset)
+                    .Select(a => new { 
+                        a.Id, 
+                        a.AssetId, 
+                        a.KodeBarang, 
+                        a.NomorAsset, 
+                        a.NamaBarang 
+                    })
+                    .ToList();
+
+                // Get all serial numbers for these assets
+                var assetIds = assets.Select(a => a.AssetId).ToList();
+                var serials = _context.TblRAssetSerials
+                    .Where(s => assetIds.Contains(s.AssetId))
+                    .Select(s => new { 
+                        s.SerialId, 
+                        s.AssetId, 
+                        s.SerialNumber, 
+                        s.Status 
+                    })
+                    .ToList();
+
+                // Get all PO details for these assets
+                var pos = _context.TblRAssetPos
+                    .Where(p => assetIds.Contains(p.AssetId))
+                    .Select(p => new { 
+                        p.Id, 
+                        p.AssetId, 
+                        p.PoNumber, 
+                        p.PoItem 
+                    })
+                    .ToList();
+
+                return Ok(new { 
+                    Assets = assets, 
+                    Serials = serials, 
+                    POs = pos,
+                    SearchParams = new { kodeBarang, nomorAsset }
+                });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Error = ex.Message });
+            }
+        }
+    }
+
+    // ===== REQUEST MODELS =====
+
+    public class UpdateSerialRequest
+    {
+        public required string SerialNumber { get; set; }
+        public required string StateId { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class AddSerialRequest
+    {
+        public int AssetId { get; set; }
+        public required string SerialNumber { get; set; }
+        public required string StateId { get; set; }
+        public string? Notes { get; set; }
+    }
+
+    public class UpdatePoRequest
+    {
+        public required string PoNumber { get; set; }
+        public string? PoItem { get; set; }
+    }
+
+    public class AddPoRequest
+    {
+        public int AssetId { get; set; }
+        public required string PoNumber { get; set; }
+        public string? PoItem { get; set; }
     }
 
     public class UpdateAssetFromReviewRequest

@@ -28,105 +28,14 @@
     </div>
 </div>
 
-<!-- Modal for Asset Details -->
-<div class="modal" id="assetDetailModal" tabindex="-1" aria-hidden="true">
+<!-- Unified Asset Details Modal -->
+<div class="modal" id="assetDetailsModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="block block-rounded shadow-none mb-0">
-                <div class="block-header block-header-default">
-                    <h3 class="block-title">Asset Details</h3>
-                    <div class="block-options">
-                        <div class="btn-group me-3" role="group" aria-label="View Toggle">
-                            <button type="button" class="btn btn-sm btn-primary" id="modalCardViewBtn" title="Card View">
-                                <i class="fa fa-th-large"></i> Card
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-primary" id="modalListViewBtn" title="List View">
-                                <i class="fa fa-list"></i> List
-                            </button>
-                        </div>
-                        <button type="button" class="btn-block-option" data-bs-dismiss="modal" aria-label="Close">
-                            <i class="fa fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="block-content">
-                    <!-- Pagination Info and Size Selector -->
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <p class="text-muted mb-0" id="modalPaginationInfo">Loading...</p>
-                        </div>
-                        <div class="col-md-6 text-end">
-                            <select class="form-select" id="modalPageSizeSelect" style="width: auto; display: inline-block;">
-                                <option value="6">6 per page</option>
-                                <option value="12">12 per page</option>
-                                <option value="18">18 per page</option>
-                                <option value="24">24 per page</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <!-- Card View Container -->
-                    <div id="modalCardView">
-                        <div class="row" id="assetDetailsContainer">
-                            <!-- Asset details will be loaded here -->
-                        </div>
-                    </div>
-                    
-                    <!-- List View Container -->
-                    <div id="modalListView" style="display: none;">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-striped table-vcenter" id="assetDetailsTable">
-                                <thead class="text-center bg-light">
-                                    <tr>
-                                        <th>Asset #</th>
-                                        <th>Status</th>
-                                        <th>Foto</th>
-                                        <th>Nama Barang</th>
-                                        <th>Kode</th>
-                                        <th>Nomor Asset</th>
-                                        <th>Kategori</th>
-                                        <th>Qty</th>
-                                        <th>State</th>
-                                        <th>District</th>
-                                        <th>Actions</th>
-                                        <th>Tanggal Masuk</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <!-- Table rows will be loaded here -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <!-- Pagination -->
-                    <div class="row mt-3">
-                        <div class="col-12">
-                            <nav aria-label="Asset details pagination">
-                                <ul class="pagination justify-content-center" id="modalPaginationNav">
-                                    <!-- Pagination buttons will be generated here -->
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                </div>
-                <div class="block-content block-content-full block-content-sm text-end border-top">
-                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Modal for Serial Numbers Details -->
-<div class="modal" id="serialDetailsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="block block-rounded shadow-none mb-0 border-success">
-                <div class="block-header bg-success text-white">
+                <div class="block-header bg-primary text-white">
                     <h3 class="block-title text-white">
-                        <i class="fa fa-list me-2"></i>Serial Numbers Details
+                        <i class="fa fa-cube me-2"></i><span id="assetDetailsTitle">Asset Details</span>
                     </h3>
                     <div class="block-options">
                         <button type="button" class="btn-block-option text-white" data-bs-dismiss="modal">
@@ -134,28 +43,143 @@
                         </button>
                     </div>
                 </div>
-                <div class="block-content block-content-full">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped table-vcenter" id="serialDetailsTable">
-                            <thead class="text-center bg-success text-white">
-                                <tr>
-                                    <th>Serial Number</th>
-                                    <th>Status</th>
-                                    <th>State</th>
-                                    <th>Notes</th>
-                                    <th>Created At</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Serial details will be loaded here -->
-                            </tbody>
-                        </table>
+                
+                <!-- Tab Navigation -->
+                <div class="block-content block-content-full p-0">
+                    <ul class="nav nav-tabs nav-tabs-block" id="assetDetailsTabs" role="tablist">
+                        <li class="nav-item">
+                            <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab" aria-controls="overview" aria-selected="true">
+                                <i class="fa fa-info-circle me-1"></i>Overview
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="serials-tab" data-bs-toggle="tab" data-bs-target="#serials" type="button" role="tab" aria-controls="serials" aria-selected="false">
+                                <i class="fa fa-list me-1"></i>Serial Numbers <span class="badge bg-success ms-1" id="serialCount">0</span>
+                            </button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" id="pos-tab" data-bs-toggle="tab" data-bs-target="#pos" type="button" role="tab" aria-controls="pos" aria-selected="false">
+                                <i class="fa fa-file-text me-1"></i>PO Items <span class="badge bg-warning ms-1" id="poCount">0</span>
+                            </button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content" id="assetDetailsTabContent">
+                        <!-- Overview Tab -->
+                        <div class="tab-pane fade show active" id="overview" role="tabpanel" aria-labelledby="overview-tab">
+                            <div class="block-content">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Nama Barang</label>
+                                            <div id="overview-namaBarang" class="form-control-plaintext">-</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Nomor Asset</label>
+                                            <div id="overview-nomorAsset" class="form-control-plaintext">-</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Kode Barang</label>
+                                            <div id="overview-kodeBarang" class="form-control-plaintext">-</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Kategori</label>
+                                            <div id="overview-kategori" class="form-control-plaintext">-</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Quantity</label>
+                                            <div id="overview-qty" class="form-control-plaintext">-</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">PO Number</label>
+                                            <div id="overview-poNumber" class="form-control-plaintext">-</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">District</label>
+                                            <div id="overview-district" class="form-control-plaintext">-</div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Tanggal Masuk</label>
+                                            <div id="overview-tanggalMasuk" class="form-control-plaintext">-</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row" id="overview-foto-container" style="display: none;">
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold">Foto Asset</label>
+                                        <div class="text-center">
+                                            <img id="overview-foto" src="" alt="Asset Photo" class="img-fluid rounded" style="max-height: 300px;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Serial Numbers Tab -->
+                        <div class="tab-pane fade" id="serials" role="tabpanel" aria-labelledby="serials-tab">
+                            <div class="block-content">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0">Serial Numbers Management</h6>
+                                    <button type="button" class="btn btn-success btn-sm" id="addSerialBtn">
+                                        <i class="fa fa-plus me-1"></i>Add Serial
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped table-vcenter" id="serialDetailsTable">
+                                        <thead class="text-center bg-success text-white">
+                                            <tr>
+                                                <th>Serial Number</th>
+                                                <th>Status</th>
+                                                <th>State</th>
+                                                <th>Notes</th>
+                                                <th>Created At</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Serial details will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- PO Items Tab -->
+                        <div class="tab-pane fade" id="pos" role="tabpanel" aria-labelledby="pos-tab">
+                            <div class="block-content">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <h6 class="mb-0">PO Items Management</h6>
+                                    <button type="button" class="btn btn-warning btn-sm" id="addPoBtn">
+                                        <i class="fa fa-plus me-1"></i>Add PO
+                                    </button>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-bordered table-striped table-vcenter" id="poDetailsTable">
+                                        <thead class="text-center bg-warning text-dark">
+                                            <tr>
+                                                <th>PO Number</th>
+                                                <th>PO Item</th>
+                                                <th>Created At</th>
+                                                <th>Created By</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- PO details will be loaded here -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
+                
                 <div class="block-content block-content-full block-content-sm text-end border-top bg-light">
-                    <button type="button" class="btn btn-success" data-bs-dismiss="modal">
-                        <i class="fa fa-check me-1"></i>Close
+                    <button type="button" class="btn btn-alt-secondary" data-bs-dismiss="modal">
+                        <i class="fa fa-times me-1"></i>Close
                     </button>
                 </div>
             </div>
@@ -163,47 +187,56 @@
     </div>
 </div>
 
-<!-- Modal for PO Numbers Details -->
-<div class="modal" id="poDetailsModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="block block-rounded shadow-none mb-0 border-warning">
-                <div class="block-header bg-warning text-dark">
-                    <h3 class="block-title text-dark">
-                        <i class="fa fa-file-text me-2"></i>PO Numbers Details
-                    </h3>
-                    <div class="block-options">
-                        <button type="button" class="btn-block-option text-dark" data-bs-dismiss="modal">
-                            <i class="fa fa-times"></i>
-                        </button>
-                    </div>
-                </div>
-                <div class="block-content block-content-full">
-                    <div class="table-responsive">
-                        <table class="table table-bordered table-striped table-vcenter" id="poDetailsTable">
-                            <thead class="text-center bg-warning text-dark">
-                                <tr>
-                                    <th>PO Number</th>
-                                    <th>PO Item</th>
-                                    <th>Created At</th>
-                                    <th>Created By</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- PO details will be loaded here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                <div class="block-content block-content-full block-content-sm text-end border-top bg-light">
-                    <button type="button" class="btn btn-warning" data-bs-dismiss="modal">
-                        <i class="fa fa-check me-1"></i>Close
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+<style>
+/* Improve SweetAlert2 modal visibility and prevent overlap */
+.swal2-container {
+    z-index: 9999 !important;
+}
+
+.swal2-backdrop-show {
+    backdrop-filter: blur(3px) !important;
+    -webkit-backdrop-filter: blur(3px) !important;
+    background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Ensure main modal gets blurred when SweetAlert is shown */
+.modal.show {
+    z-index: 1050;
+}
+
+.modal-backdrop {
+    z-index: 1040;
+}
+
+/* Add transition for blur effect */
+.modal-content {
+    transition: filter 0.3s ease;
+}
+
+/* Blur main modal when SweetAlert is active */
+body.swal2-shown .modal-content {
+    filter: blur(2px);
+}
+
+/* Improve SweetAlert2 input focus */
+.swal2-input:focus,
+.swal2-textarea:focus,
+.swal2-select:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important;
+    border-color: #007bff !important;
+}
+
+/* Better button styling in SweetAlert */
+.swal2-confirm {
+    margin-right: 0.5rem !important;
+}
+
+/* Prevent scroll issues */
+body.swal2-shown .modal {
+    padding-right: 0 !important;
+}
+</style>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

@@ -20,5 +20,25 @@ namespace AssetTaking.Controllers
             }
             return View();
         }
+
+        public IActionResult Detail(string kode, string nomor)
+        {
+            if (HttpContext.Session.GetString("Nrp") == null)
+            {
+                return RedirectToAction("Index", "Login");
+            }
+
+            if (string.IsNullOrEmpty(kode) || string.IsNullOrEmpty(nomor))
+            {
+                TempData["ErrorMessage"] = "Invalid parameters. Asset code and number are required.";
+                return RedirectToAction("Index");
+            }
+
+            ViewData["KodeBarang"] = kode;
+            ViewData["NomorAsset"] = nomor;
+            ViewData["Title"] = $"Asset Detail - {kode} / {nomor}";
+
+            return View();
+        }
     }
 }

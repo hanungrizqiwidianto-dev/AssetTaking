@@ -1,6 +1,11 @@
 ﻿$(document).ready(function() {
     console.log("AssetIn.js loaded");
     
+    // Step navigation state
+    let currentStep = 1;
+    let assetData = {};
+    let generatedSerials = [];
+    
     // Load categories from database
     loadCategories();
     
@@ -9,6 +14,277 @@
     
     // Load districts from database  
     loadDistricts();
+
+    // Step Navigation Functions
+    function showStep(stepNumber) {
+        // Hide all steps
+        $('.step-content').removeClass('active').hide();
+        $('.step-indicator').removeClass('active completed');
+        
+        // Show current step
+        $(`#step${stepNumber}-content`).addClass('active').show();
+        $(`#step${stepNumber}-indicator`).addClass('active');
+        
+        // Mark previous steps as completed
+        for (let i = 1; i < stepNumber; i++) {
+            $(`#step${i}-indicator`).addClass('completed');
+        }
+        
+        currentStep = stepNumber;
+    }
+
+    function validateStep1() {
+        const namaBarang = $('#namaBarang').val()?.trim();
+        const nomorAsset = $('#nomorAsset').val()?.trim();
+        const kategoriBarang = $('#kategoriBarang').val();
+        const kodeBarang = $('#kodeBarang').val()?.trim();
+        const qty = parseInt($('#qty').val());
+
+        console.log('Validating step 1:', { namaBarang, nomorAsset, kategoriBarang, kodeBarang, qty });
+
+        if (!namaBarang || !nomorAsset || !kategoriBarang || !kodeBarang || !qty || qty <= 0) {
+            Swal.fire({
+                title: 'Data Tidak Lengkap!',
+                text: 'Mohon lengkapi semua field yang wajib diisi.',
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            });
+            return false;
+        }
+
+        return true;
+    }
+
+    function populateAssetSummary() {
+        $('#summary-namaBarang').text($('#namaBarang').val());
+        $('#summary-nomorAsset').text($('#nomorAsset').val());
+        $('#summary-kategoriBarang').text($('#kategoriBarang').val());
+        $('#summary-qty').text($('#qty').val());
+    }
+
+    async function generateSerialNumbers() {
+        const kategoriBarang = $('#kategoriBarang').val();
+        const qty = parseInt($('#qty').val());
+
+        console.log('Generating serial numbers:', { kategoriBarang, qty });
+
+        try {
+            const response = await fetch('/api/AssetIn/GenerateSerialNumbers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    KategoriBarang: kategoriBarang,
+                    Quantity: qty
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('GenerateSerialNumbers response:', result);
+            
+            if (result.success) {
+                // Handle different response formats
+                const serials = result.data || result.serialNumbers || [];
+                console.log('Generated serials:', serials);
+                
+                if (!Array.isArray(serials) || serials.length === 0) {
+                    throw new Error('No serial numbers generated');
+                }
+                
+                return serials;
+            } else {
+                throw new Error(result.message || 'Failed to generate serial numbers');
+            }
+        } catch (error) {
+            console.error('Error in generateSerialNumbers:', error);
+            throw error;
+        }
+    }
+
+    function createSerialPoMapping(serials) {
+        if (!serials || !Array.isArray(serials) || serials.length === 0) {
+            $('#serialPoMapping').html('<div class="alert alert-warning"><i class="fa fa-exclamation-triangle me-1"></i>Tidak ada serial numbers yang dapat ditampilkan.</div>');
+            return;
+        }
+        
+        const poNumber = $('#poNumber').val() || '';
+        let html = '<div class="row">';
+        
+        serials.forEach((serial, index) => {
+            html += `
+                <div class="col-md-6 mb-3">
+                    <div class="serial-po-item">
+                        <div class="row">
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold">Serial Number ${index + 1}</label>
+                                <div class="serial-number-display">${serial}</div>
+                                <input type="hidden" name="serials[${index}]" value="${serial}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="poItem_${index}">PO Item</label>
+                                <input type="text" class="form-control" id="poItem_${index}" 
+                                       name="poItems[${index}]" placeholder="Contoh: 001, 002">
+                                <small class="form-text text-muted">
+                                    PO Item untuk serial ${serial}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        
+        if (poNumber) {
+            html = `<div class="alert alert-info mb-3">
+                        <i class="fa fa-info-circle me-1"></i>
+                        <strong>PO Number:</strong> ${poNumber}
+                    </div>` + html;
+        }
+        
+        $('#serialPoMapping').html(html);
+    }
+
+    // Event Handlers for Step Navigation
+    $('#nextToStep2').on('click', async function() {
+        if (!validateStep1()) {
+            return;
+        }
+
+        // Store step 1 data
+        assetData = {
+            namaBarang: $('#namaBarang').val(),
+            nomorAsset: $('#nomorAsset').val(),
+            kategoriBarang: $('#kategoriBarang').val(),
+            kodeBarang: $('#kodeBarang').val(),
+            qty: parseInt($('#qty').val()),
+            poNumber: $('#poNumber').val(),
+            state: $('#state').val(),
+            dstrctIn: $('#dstrctIn').val()
+        };
+
+        try {
+            // Show loading
+            $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Generating Serial Numbers...');
+            
+            // Generate serial numbers
+            generatedSerials = await generateSerialNumbers();
+            
+            // Validate generated serials
+            if (!generatedSerials || !Array.isArray(generatedSerials) || generatedSerials.length === 0) {
+                throw new Error('Serial numbers tidak dapat di-generate. Silakan coba lagi.');
+            }
+            
+            // Populate summary and create mapping
+            populateAssetSummary();
+            createSerialPoMapping(generatedSerials);
+            
+            // Move to step 2
+            showStep(2);
+            
+        } catch (error) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Gagal generate serial numbers: ' + error.message,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        } finally {
+            $(this).prop('disabled', false).html('<i class="fa fa-arrow-right"></i> Lanjut ke Serial Numbers & PO Items');
+        }
+    });
+
+    $('#backToStep1').on('click', function() {
+        showStep(1);
+    });
+
+    // Form submission for step 2
+    $('#serialPoForm').on('submit', async function(e) {
+        e.preventDefault();
+        
+        // Collect PO items data
+        const poItems = [];
+        $('input[name^="poItems"]').each(function() {
+            poItems.push($(this).val() || '');
+        });
+
+        // Prepare form data
+        const formData = new FormData();
+        
+        // Add asset data from step 1
+        Object.keys(assetData).forEach(key => {
+            if (assetData[key] !== null && assetData[key] !== undefined) {
+                formData.append(key, assetData[key]);
+            }
+        });
+
+        // Add serial numbers and PO items
+        generatedSerials.forEach((serial, index) => {
+            formData.append(`serialNumbers[${index}]`, serial);
+            formData.append(`poItems[${index}]`, poItems[index] || '');
+        });
+
+        // Add photo if selected
+        const fileInput = $('#fotoFile')[0];
+        if (fileInput.files.length > 0) {
+            formData.append('fotoFile', fileInput.files[0]);
+        }
+
+        // Add additional flags
+        formData.append('manualSerial', 'false');
+        formData.append('useStepProcess', 'true');
+
+        try {
+            $('#submitAssetIn').prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
+            
+            const response = await fetch('/api/AssetIn/CreateWithSteps', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.success || result.remarks) {
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: result.message || 'Asset In berhasil disimpan',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    // Reset form and go back to step 1
+                    resetAllForms();
+                    showStep(1);
+                });
+            } else {
+                throw new Error(result.message || 'Terjadi kesalahan saat menyimpan data');
+            }
+            
+        } catch (error) {
+            Swal.fire({
+                title: 'Error!',
+                text: error.message,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        } finally {
+            $('#submitAssetIn').prop('disabled', false).html('<i class="fa fa-save"></i> Submit Asset In');
+        }
+    });
+
+    function resetAllForms() {
+        $('#assetDataForm')[0].reset();
+        $('#serialPoForm')[0].reset();
+        $('#imagePreview').hide();
+        assetData = {};
+        generatedSerials = [];
+        $('#serialPoMapping').empty();
+    }
 
     // Image preview functionality
     $('#fotoFile').on('change', function(e) {
@@ -1328,4 +1604,410 @@
             console.error('Error loading districts:', error);
         }
     }
+
+    // ===== SCAN TAB STEP NAVIGATION =====
+    
+    // Scan tab step navigation variables
+    let scanAssetData = {};
+    let scanGeneratedSerials = [];
+    
+    // Function to validate scan step 1 
+    function validateScanStep1() {
+        const namaBarang = $('#scan_namaBarang').val()?.trim();
+        const nomorAsset = $('#scan_nomorAsset').val()?.trim();
+        const kategoriBarang = $('#scan_kategoriBarang').val();
+        const kodeBarang = $('#scan_kodeBarang').val()?.trim();
+        const qty = parseInt($('#scan_qty').val());
+
+        console.log('Validating scan step 1:', { namaBarang, nomorAsset, kategoriBarang, kodeBarang, qty });
+
+        if (!namaBarang || !nomorAsset || !kategoriBarang || !kodeBarang || !qty || qty <= 0) {
+            Swal.fire({
+                title: 'Data Tidak Lengkap!',
+                text: 'Mohon lengkapi semua field yang wajib diisi.',
+                icon: 'warning',
+                confirmButtonText: 'OK'
+            });
+            return false;
+        }
+
+        return true;
+    }
+
+    // Function to generate serial numbers for scan
+    async function generateScanSerialNumbers() {
+        const kategoriBarang = $('#scan_kategoriBarang').val();
+        const qty = parseInt($('#scan_qty').val());
+
+        console.log('Generating scan serial numbers:', { kategoriBarang, qty });
+
+        try {
+            const response = await fetch('/api/AssetIn/GenerateSerialNumbers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    KategoriBarang: kategoriBarang,
+                    Quantity: qty
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('GenerateScanSerialNumbers response:', result);
+            
+            if (result.success) {
+                const serials = result.data || result.serialNumbers || [];
+                console.log('Generated scan serials:', serials);
+                
+                if (!Array.isArray(serials) || serials.length === 0) {
+                    throw new Error('No serial numbers generated');
+                }
+                
+                return serials;
+            } else {
+                throw new Error(result.message || 'Failed to generate serial numbers');
+            }
+        } catch (error) {
+            console.error('Error in generateScanSerialNumbers:', error);
+            throw error;
+        }
+    }
+
+    // Function to create serial PO mapping for scan
+    function createScanSerialPoMapping(serials) {
+        if (!serials || !Array.isArray(serials) || serials.length === 0) {
+            $('#scan-serialPoMapping').html('<div class="alert alert-warning"><i class="fa fa-exclamation-triangle me-1"></i>Tidak ada serial numbers yang dapat ditampilkan.</div>');
+            return;
+        }
+        
+        const poNumber = $('#scan_poNumber').val() || '';
+        let html = '<div class="row">';
+        
+        serials.forEach((serial, index) => {
+            html += `
+                <div class="col-md-6 mb-3">
+                    <div class="serial-po-item">
+                        <div class="row">
+                            <div class="col-12 mb-2">
+                                <label class="form-label fw-bold">Serial Number ${index + 1}</label>
+                                <div class="serial-number-display">${serial}</div>
+                                <input type="hidden" name="scan_serials[${index}]" value="${serial}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label" for="scan_poItem_${index}">PO Item</label>
+                                <input type="text" class="form-control" id="scan_poItem_${index}" 
+                                       name="scan_poItems[${index}]" placeholder="Contoh: 001, 002">
+                                <small class="form-text text-muted">
+                                    PO Item untuk serial ${serial}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        html += '</div>';
+        
+        if (poNumber) {
+            html = `<div class="alert alert-info mb-3">
+                        <i class="fa fa-info-circle me-1"></i>
+                        <strong>PO Number:</strong> ${poNumber}
+                    </div>` + html;
+        }
+        
+        $('#scan-serialPoMapping').html(html);
+    }
+
+    // Event handler for scan next to step 2
+    $('#scanNextToStep2').on('click', async function() {
+        if (!validateScanStep1()) {
+            return;
+        }
+
+        // Store scan step 1 data
+        scanAssetData = {
+            namaBarang: $('#scan_namaBarang').val(),
+            nomorAsset: $('#scan_nomorAsset').val(),
+            kategoriBarang: $('#scan_kategoriBarang').val(),
+            kodeBarang: $('#scan_kodeBarang').val(),
+            qty: parseInt($('#scan_qty').val()),
+            poNumber: $('#scan_poNumber').val(),
+            state: $('#scan_state').val(),
+            dstrctIn: $('#scan_dstrctIn').val()
+        };
+
+        try {
+            // Show loading
+            $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Generating Serial Numbers...');
+            
+            // Generate serial numbers
+            scanGeneratedSerials = await generateScanSerialNumbers();
+            
+            // Validate generated serials
+            if (!scanGeneratedSerials || !Array.isArray(scanGeneratedSerials) || scanGeneratedSerials.length === 0) {
+                throw new Error('Serial numbers tidak dapat di-generate. Silakan coba lagi.');
+            }
+            
+            // Create mapping
+            createScanSerialPoMapping(scanGeneratedSerials);
+            
+            // Show step 2 and hide step 1
+            $('#scan-step-1').hide();
+            $('#scan-step-2').show();
+            
+            // Update step indicators
+            $('.scan-step-indicator').removeClass('active completed');
+            $('#scan-step1-indicator').addClass('completed');
+            $('#scan-step2-indicator').addClass('active');
+            
+        } catch (error) {
+            Swal.fire({
+                title: 'Error!',
+                text: 'Gagal generate serial numbers: ' + error.message,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        } finally {
+            $(this).prop('disabled', false).html('<i class="fa fa-arrow-right me-1"></i> Lanjut ke Serial Numbers & PO Items');
+        }
+    });
+
+    // Event handler for scan back to step 1
+    $('#scanBackToStep1').on('click', function() {
+        // Hide step 2 and show step 1
+        $('#scan-step-2').hide();
+        $('#scan-step-1').show();
+        
+        // Update step indicators
+        $('.scan-step-indicator').removeClass('active completed');
+        $('#scan-step1-indicator').addClass('active');
+    });
+
+    // Event handler for scan form submission
+    $('#submitScanAssetIn').on('click', async function(e) {
+        e.preventDefault();
+        
+        // Collect PO items data
+        const poItems = [];
+        $('input[name^="scan_poItems"]').each(function() {
+            poItems.push($(this).val() || '');
+        });
+
+        // Prepare form data
+        const formData = new FormData();
+        
+        // Add asset data from step 1
+        Object.keys(scanAssetData).forEach(key => {
+            if (scanAssetData[key] !== null && scanAssetData[key] !== undefined) {
+                formData.append(key, scanAssetData[key]);
+            }
+        });
+
+        // Add serial numbers and PO items
+        scanGeneratedSerials.forEach((serial, index) => {
+            formData.append(`serialNumbers[${index}]`, serial);
+            formData.append(`poItems[${index}]`, poItems[index] || '');
+        });
+
+        // Add photo if selected
+        const fileInput = $('#scan_fotoFile')[0];
+        if (fileInput.files.length > 0) {
+            formData.append('fotoFile', fileInput.files[0]);
+        }
+
+        // Add additional flags
+        formData.append('manualSerial', 'false');
+        formData.append('useStepProcess', 'true');
+
+        try {
+            $(this).prop('disabled', true).html('<i class="fa fa-spinner fa-spin"></i> Menyimpan...');
+            
+            const response = await fetch('/api/AssetIn/CreateWithSteps', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.success || result.remarks) {
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: result.message || 'Asset In berhasil disimpan',
+                    icon: 'success',
+                    confirmButtonText: 'OK'
+                }).then(() => {
+                    // Reset scan forms and go back to step 1
+                    resetScanForms();
+                    
+                    // Refresh notifications
+                    if (typeof refreshNotifications === 'function') {
+                        refreshNotifications();
+                    }
+                    
+                    // Ask user what to do next
+                    Swal.fire({
+                        title: 'Scan Lagi?',
+                        text: 'Apakah Anda ingin scan QR/Barcode lagi?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Scan Lagi',
+                        cancelButtonText: 'Selesai'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            startScanning();
+                        }
+                    });
+                });
+            } else {
+                throw new Error(result.message || 'Terjadi kesalahan saat menyimpan data');
+            }
+            
+        } catch (error) {
+            Swal.fire({
+                title: 'Error!',
+                text: error.message,
+                icon: 'error',
+                confirmButtonText: 'OK'
+            });
+        } finally {
+            $(this).prop('disabled', false).html('<i class="fa fa-save me-1"></i> Submit Asset In');
+        }
+    });
+
+    // Function to reset scan forms
+    function resetScanForms() {
+        // Reset form data
+        $('#scanAssetDataForm')[0].reset();
+        $('#scan_imagePreview').hide();
+        scanAssetData = {};
+        scanGeneratedSerials = [];
+        $('#scan-serialPoMapping').empty();
+        
+        // Reset step navigation
+        $('#scan-step-2').hide();
+        $('#scan-step-1').show();
+        $('#waiting-scan').show();
+        $('#scanAssetDataForm').parent().hide();
+        
+        // Update step indicators
+        $('.scan-step-indicator').removeClass('active completed');
+        $('#scan-step1-indicator').addClass('active');
+        
+        // Reset buttons
+        $('#scanNextToStep2').prop('disabled', true);
+    }
+
+    // Enable/disable scan next button based on form validation
+    function validateScanFormFields() {
+        const isValid = 
+            $('#scan_namaBarang').val()?.trim() &&
+            $('#scan_nomorAsset').val()?.trim() &&
+            $('#scan_kategoriBarang').val() &&
+            $('#scan_kodeBarang').val()?.trim() &&
+            $('#scan_qty').val() && 
+            parseInt($('#scan_qty').val()) > 0;
+            
+        $('#scanNextToStep2').prop('disabled', !isValid);
+    }
+
+    // Add event listeners for scan form validation
+    $('#scan_namaBarang, #scan_nomorAsset, #scan_kategoriBarang, #scan_kodeBarang, #scan_qty').on('input change', function() {
+        validateScanFormFields();
+    });
+
+    // Update the original onScanSuccess function to show form properly
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log("QR/Barcode scanned:", decodedText);
+        
+        // Stop scanning immediately
+        stopScanning();
+        
+        // Show scan success message
+        $('#scan-result').show();
+        setTimeout(() => {
+            $('#scan-result').hide();
+        }, 3000);
+
+        try {
+            // Try to parse as JSON first (for structured QR codes)
+            const assetData = JSON.parse(decodedText);
+            
+            if (assetData.nomorAsset || assetData.namaBarang) {
+                fillScannedForm({
+                    nomorAsset: assetData.nomorAsset || '',
+                    namaBarang: assetData.namaBarang || '',
+                    kodeBarang: assetData.kodeBarang || '',
+                    kategoriBarang: assetData.kategoriBarang || '',
+                    foto: assetData.foto || '',
+                    qty: assetData.qty || 1,
+                    state: assetData.state || '',
+                    district: assetData.district || '',
+                    serialNumber: assetData.serialNumber || ''
+                });
+            } else {
+                throw new Error("Invalid QR format");
+            }
+        } catch (e) {
+            // If not JSON, treat as simple asset number or name
+            if (decodedText.length > 20) {
+                // Likely a description, use as nama barang
+                fillScannedForm({
+                    nomorAsset: '',
+                    namaBarang: decodedText,
+                    kodeBarang: '',
+                    kategoriBarang: '',
+                    foto: ''
+                });
+            } else {
+                // Likely an asset number
+                fillScannedForm({
+                    nomorAsset: decodedText,
+                    namaBarang: `Item-${decodedText}`,
+                    kodeBarang: decodedText,
+                    kategoriBarang: '',
+                    foto: ''
+                });
+            }
+        }
+        
+        // Show form in step 1
+        showScannedFormStep1();
+        
+        // Validate form fields and enable next button
+        validateScanFormFields();
+    }
+
+    // Updated function to show scanned form in step 1
+    function showScannedFormStep1() {
+        $('#waiting-scan').hide();
+        $('#scanAssetDataForm').parent().show();
+        
+        // Ensure we're in step 1
+        $('#scan-step-2').hide();
+        $('#scan-step-1').show();
+        
+        // Update step indicators
+        $('.scan-step-indicator').removeClass('active completed');
+        $('#scan-step1-indicator').addClass('active');
+        
+        // Focus on quantity field for quick input
+        $('#scan_qty').focus().select();
+    }
+
+    // Update resetScannerForm to work with step navigation
+    function resetScannerForm() {
+        resetScanForms();
+        
+        // Stop scanning if active
+        if (isScanning) {
+            stopScanning();
+        }
+    }
+
 });

@@ -26,6 +26,18 @@ $(document).ready(function () {
                 orderable: false,
                 render: function (data, type, row) {
                     return `<div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-warning btn-edit" 
+                                   data-id="${row.id}" 
+                                   data-kode="${row.kodeBarang}" 
+                                   data-nomor="${row.nomorAsset}"
+                                   data-nama="${row.namaBarang}"
+                                   data-kategori="${row.kategoriBarang}"
+                                   data-qty="${row.qty}"
+                                   data-state="${row.state || ''}"
+                                   data-district="${row.district || ''}"
+                                   title="Edit Asset">
+                                   <i class="fa fa-edit"></i>
+                                </button>
                                 <button type="button" class="btn btn-sm btn-info btn-detail" 
                                    data-kode="${row.kodeBarang}" 
                                    data-nomor="${row.nomorAsset}"
@@ -56,164 +68,26 @@ $(document).ready(function () {
         ]
     });
 
-    // Handle detail button click
+    // Handle detail button click - redirect to detail page
     $('#tbl_assets tbody').on('click', '.btn-detail', function () {
         var kodeBarang = $(this).data('kode');
         var nomorAsset = $(this).data('nomor');
         
-        // Clear previous data
-        $("#assetDetailsContainer").empty();
-        
-        // Show loading
-        $("#assetDetailsContainer").html('<div class="text-center py-4"><i class="fa fa-spinner fa-spin fa-2x"></i><br><small>Loading asset details...</small></div>');
-        
-        // Show modal
-        $('#assetDetailModal').modal('show');
-        
-        // Fetch asset details
-        $.ajax({
-            url: `/api/Review/GetAssetDetails?kodeBarang=${encodeURIComponent(kodeBarang)}&nomorAsset=${encodeURIComponent(nomorAsset)}`,
-            type: 'GET',
-            success: function (data) {
-                $("#assetDetailsContainer").empty();
-                
-                if (data && data.length > 0) {
-                    var html = '<div class="row">';
-                    
-                    data.forEach(function (asset, index) {
-                        var statusBadge = '';
-                        if (asset.status === 1) {
-                            statusBadge = '<span class="badge bg-success">Asset In</span>';
-                        } else if (asset.status === 2) {
-                            statusBadge = '<span class="badge bg-warning">Asset Out</span>';
-                        } else {
-                            statusBadge = '<span class="badge bg-secondary">Unknown</span>';
-                        }
-                        
-                        var fotoHtml = asset.foto ? 
-                            `<img src="${asset.foto}" alt="Asset Photo" class="img-fluid rounded" style="max-height: 150px;">` : 
-                            '<div class="bg-light rounded d-flex align-items-center justify-content-center" style="height: 150px;"><i class="fa fa-image fa-2x text-muted"></i></div>';
-                            
-                        html += `
-                            <div class="col-md-6 mb-4">
-                                <div class="block block-rounded h-100">
-                                    <div class="block-header block-header-default">
-                                        <h4 class="block-title">Asset #${asset.id}</h4>
-                                        <div class="block-options">
-                                            ${statusBadge}
-                                        </div>
-                                    </div>
-                                    <div class="block-content">
-                                        <div class="row">
-                                            <div class="col-4">
-                                                ${fotoHtml}
-                                            </div>
-                                            <div class="col-8">
-                                                <table class="table table-borderless table-sm">
-                                                    <tr>
-                                                        <td><strong>Nama Barang:</strong></td>
-                                                        <td>${asset.namaBarang || '-'}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><strong>Kode Barang:</strong></td>
-                                                        <td><span class="badge bg-primary">${asset.kodeBarang || '-'}</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><strong>Nomor Asset:</strong></td>
-                                                        <td><span class="badge bg-info">${asset.nomorAsset || '-'}</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><strong>Kategori:</strong></td>
-                                                        <td>${asset.kategoriBarang || '-'}</td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><strong>Quantity:</strong></td>
-                                                        <td><span class="badge bg-dark">${asset.qty || 0}</span></td>
-                                                    </tr>
-                                                    <tr>
-                                                        <td><strong>Tanggal Masuk:</strong></td>
-                                                        <td>${asset.tanggalMasuk ? moment(asset.tanggalMasuk).format("DD/MM/YYYY") : '-'}</td>
-                                                    </tr>
-                                                </table>
-                                            </div>
-                                        </div>
-                                        <hr>
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <small class="text-muted">
-                                                    <strong>Created:</strong><br>
-                                                    ${asset.createdAt ? moment(asset.createdAt).format("DD/MM/YYYY HH:mm") : '-'}<br>
-                                                    by: ${asset.createdBy || '-'}
-                                                </small>
-                                            </div>
-                                            <div class="col-6">
-                                                <small class="text-muted">
-                                                    <strong>Modified:</strong><br>
-                                                    ${asset.modifiedAt ? moment(asset.modifiedAt).format("DD/MM/YYYY HH:mm") : '-'}<br>
-                                                    by: ${asset.modifiedBy || '-'}
-                                                </small>
-                                            </div>
-                                        </div>
-                                        <div class="text-end mt-3">
-                                            <button type="button" class="btn btn-sm btn-warning btn-edit-asset" 
-                                                data-id="${asset.id}"
-                                                data-nama="${asset.namaBarang}"
-                                                data-nomor="${asset.nomorAsset}" 
-                                                data-kode="${asset.kodeBarang}"
-                                                data-kategori="${asset.kategoriBarang}"
-                                                data-qty="${asset.qty}"
-                                                data-foto="${asset.foto || ''}"
-                                                title="Edit Asset">
-                                                <i class="fa fa-edit"></i> Edit
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-success btn-generate-qr-detail ms-2" 
-                                                data-nama="${asset.namaBarang}"
-                                                data-nomor="${asset.nomorAsset}"
-                                                data-kode="${asset.kodeBarang}"
-                                                data-kategori="${asset.kategoriBarang}"
-                                                data-qty="${asset.qty}"
-                                                data-state="${assetGroup.state || ''}"
-                                                data-district="${assetGroup.district || ''}"
-                                                title="Generate QR Code">
-                                                <i class="fa fa-qrcode"></i> Generate QR
-                                            </button>
-                                            <button type="button" class="btn btn-sm btn-danger btn-delete-asset ms-2" 
-                                                data-id="${asset.id}"
-                                                data-nama="${asset.namaBarang}"
-                                                title="Delete Asset">
-                                                <i class="fa fa-trash"></i> Delete
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    
-                    html += '</div>';
-                    $("#assetDetailsContainer").html(html);
-                } else {
-                    $("#assetDetailsContainer").html('<div class="text-center py-5"><i class="fa fa-info-circle fa-2x text-muted"></i><br><h5 class="mt-2">No asset details found</h5></div>');
-                }
-            },
-            error: function (xhr, status, error) {
-                console.error('Error fetching asset details:', error);
-                $("#assetDetailsContainer").html('<div class="text-center py-5 text-danger"><i class="fa fa-exclamation-triangle fa-2x"></i><br><h5 class="mt-2">Error loading asset details</h5><p>Please try again later.</p></div>');
-            }
-        });
+        // Redirect to detail page
+        window.location.href = `/Review/Detail?kode=${encodeURIComponent(kodeBarang)}&nomor=${encodeURIComponent(nomorAsset)}`;
     });
 
     // Handle edit button click
-    $(document).on('click', '.btn-edit-asset', function() {
-        const assetId = $(this).data('id');
+    $(document).on('click', '.btn-edit', function() {
         const assetData = {
-            id: assetId,
+            id: $(this).data('id'),
             namaBarang: $(this).data('nama'),
             nomorAsset: $(this).data('nomor'),
             kodeBarang: $(this).data('kode'),
             kategoriBarang: $(this).data('kategori'),
             qty: $(this).data('qty'),
-            foto: $(this).data('foto')
+            state: $(this).data('state'),
+            district: $(this).data('district')
         };
         
         showEditAssetModal(assetData);

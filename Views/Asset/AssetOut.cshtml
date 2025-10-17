@@ -113,33 +113,15 @@
             </div>
             
             <div class="row">
-                <div class="col-lg-6">
+                <div class="col-lg-12">
                     <div class="mb-4">
-                        <label class="form-label" for="selectedSerials">Serial Numbers</label>
-                        <div id="serialNumbersContainer" class="border rounded p-3" style="min-height: 100px; background-color: #f8f9fa;">
-                            <div class="text-muted text-center">
-                                <i class="fa fa-info-circle me-1"></i>
-                                Pilih asset terlebih dahulu untuk melihat serial numbers
-                            </div>
-                        </div>
+                        <label class="form-label" for="serialNumberSelect">Serial Numbers</label>
+                        <select id="serialNumberSelect" class="form-control" name="serialNumberSelect" multiple="multiple" disabled>
+                            <option value="">Pilih asset terlebih dahulu...</option>
+                        </select>
                         <div class="form-text text-muted">
                             <i class="fa fa-info-circle me-1"></i>
-                            Pilih serial numbers yang akan di-checkout
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-6">
-                    <div class="mb-4">
-                        <label class="form-label" for="selectedPos">PO Numbers</label>
-                        <div id="poNumbersContainer" class="border rounded p-3" style="min-height: 100px; background-color: #f8f9fa;">
-                            <div class="text-muted text-center">
-                                <i class="fa fa-info-circle me-1"></i>
-                                Pilih asset terlebih dahulu untuk melihat PO numbers
-                            </div>
-                        </div>
-                        <div class="form-text text-muted">
-                            <i class="fa fa-info-circle me-1"></i>
-                            Pilih PO numbers yang akan di-checkout
+                            Pilih serial numbers yang akan di-checkout (dapat memilih multiple)
                         </div>
                     </div>
                 </div>
@@ -261,10 +243,11 @@
                                     </div>
                                     <div class="mb-3">
                                         <label class="form-label">Serial Numbers <span class="text-danger">*</span></label>
-                                        <div id="scan_serialNumbersContainer" class="border rounded p-3 bg-light">
-                                            <div class="text-muted text-center">
-                                                <i class="fa fa-info-circle me-1"></i>Scan asset terlebih dahulu untuk melihat serial numbers
-                                            </div>
+                                        <select id="scan_serialNumberSelect" class="form-control" name="serialNumberSelect" multiple="multiple" disabled>
+                                            <option value="">Scan asset terlebih dahulu...</option>
+                                        </select>
+                                        <div class="form-text text-muted">
+                                            <i class="fa fa-info-circle me-1"></i>Pilih serial numbers yang akan di-checkout
                                         </div>
                                     </div>
                                     <div class="mb-3">
@@ -389,6 +372,17 @@
         
         .select2-container--bootstrap-5 .select2-selection {
             min-height: calc(1.5em + 0.75rem + 2px);
+        }
+
+        /* Serial Number Select2 Styling */
+        .select2-container--bootstrap-5 .select2-selection--multiple {
+            min-height: calc(1.5em + 0.75rem + 2px);
+        }
+        
+        .select2-container--bootstrap-5 .select2-selection--multiple .select2-selection__choice {
+            background-color: #007bff;
+            border-color: #007bff;
+            color: #fff;
         }
     </style>
     
